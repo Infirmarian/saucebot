@@ -9,6 +9,7 @@ from fuzzywuzzy import fuzz
 
 def parse_user_input(text, group_id):
     text = text.strip(" \n\t\r").lower()
+    print(text)
     # I wasn't mentioned! :(
     if text.find("!sauce bot") == -1:
         return
