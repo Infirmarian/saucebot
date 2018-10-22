@@ -11,7 +11,7 @@ def test():
 @app.route("/sauce", methods=["POST"])
 def sauce():
     print("Got em!")
-    print(request.json["text"])
+    sauce_boy.parse_user_input(request.json["text"])
     return "Thanks GroupMe!"
 
 if __name__ == "__main__":
