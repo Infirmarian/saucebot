@@ -76,7 +76,7 @@ def try_to_remove(item, group_id):
     items_tracked = load_list_to_check(group_id)
     for food in items_tracked:
         if food.lower() == item.lower():
-            return remove_food_item(item)
+            return remove_food_item(food, group_id)
         
     suggestion = ""
     ratio = 0
@@ -86,7 +86,7 @@ def try_to_remove(item, group_id):
             ratio = r
             suggestion = food
     if suggestion == "":
-        return remove_food_item(item)
+        return remove_food_item(item, group_id)
     return "I couldn't find that specific food item, did you mean {}".format(suggestion)
 
 
@@ -182,14 +182,14 @@ def add_food_item(item, group_id):
         return "Added {} to the list of items to check".format(item)
 
 # A functionality to remove 
-def remove_food_item(item):
+def remove_food_item(item, group_id):
     if not os.path.exists("check.json"):
         with open("check.json", "w") as f:
             json.dump({}, f)
         return "Looks like you weren't tracking any items, so there was nothing for me to remove!"
     with open("check.json", "r") as f:
         data = json.load(f)
-    existing = data.pop(item, None)
+    existing = data[group_id].pop(item, None)
     if existing is not None:
         with open("check.json", "w") as f:
             json.dump(data, f)
