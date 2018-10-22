@@ -8,12 +8,12 @@ from fuzzywuzzy import fuzz
 
 
 def parse_user_input(text, group_id):
-    text = text.strip(" \n\t\r").lower()
-    print(text)
+    lower = text.strip(" \n\t\r").lower()
+    trimmed = text.strip(" \n\t\r")
     # I wasn't mentioned! :(
-    if text.find("!sauce bot") == -1:
+    if lower.find("!sauce bot") == -1:
         return
-    if text == "!sauce bot info":
+    if lower == "!sauce bot info":
         message_groupme("Hi, I'm Sauce Bot, a totally useless bot originally built "+
         "to track White Sauce Pasta at Covel. I've since grown and you can have me "+
         "check for other food items in the UCLA dining halls as well!\n" +
@@ -21,14 +21,14 @@ def parse_user_input(text, group_id):
         "'!Sauce Bot list foods' to get a list of all the items I'm tracking "+
         "or '!Sauce Bot add [food item here]' to give me another item to track", group_id)
         return
-    if text.find("list") != -1:
+    if lower.find("list") != -1:
         message_groupme(get_items_tracked(group_id), group_id)
         return
-    if text.find("track") != -1:
+    if lower.find("track") != -1:
         item = text[text.find("track ")+6:]
         message_groupme(try_to_add(item, group_id), group_id)
         return 
-    if text.find("add") != -1:
+    if lower.find("add") != -1:
         item = text[text.find("add ")+4:]
         message_groupme(try_to_add(item, group_id), group_id)
         return
@@ -38,7 +38,7 @@ def try_to_add(item, group_id):
     food_list = load_food_csv()
     for food in food_list:
         if food.lower() == item.lower():
-            return add_food_item(item, group_id)
+            return add_food_item(food, group_id)
     suggestions = []
     for food in food_list:
         suggestions.append((food, fuzz.ratio(item, food)))
@@ -153,7 +153,7 @@ def add_food_item(item, group_id):
         if group_id not in data:
             data[group_id] = {item:0}
         if item not in data[group_id]:
-            data[item] = 0
+            data[group_id][item] = 0
         else:
             return "{} was already being tracked!".format(item)
         with open("check.json", "w") as f:
