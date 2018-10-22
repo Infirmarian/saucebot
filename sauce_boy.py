@@ -25,7 +25,27 @@ def parse_user_input(text):
     # I wasn't mentioned! :(
     if text.find("!Sauce Bot") == -1 and text.find("!sauce bot") == -1:
         return
+    if text.find("list") != -1:
+        message_groupme(get_items_tracked())
     message_groupme("Hi there, I'm just a new bot, and I don't know that command yet!")
+
+
+def get_items_tracked():
+    l = load_list_to_check()
+    msg = "I'm currently tracking "
+    if len(l) == 0:
+        return "I'm not tracking any items! To add an item, say\n!Sauce Bot add [insert item here]"
+    if len(l) == 1:
+        return msg + l[0]
+    if len(l) == 2:
+        return msg + l[0] +" and "+l[1]
+    if len(l) > 2:
+        for i in range(len(l-1)):
+            msg += l[i]+", "
+        msg += "and "+l[:1]
+    return msg
+
+
 
 def format_text(items_dict):
     msg = ""
