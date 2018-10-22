@@ -9,9 +9,8 @@ from fuzzywuzzy import fuzz
 
 def parse_user_input(text, group_id):
     lower = text.strip(" \n\t\r").lower()
-    trimmed = text.strip(" \n\t\r")
     # I wasn't mentioned! :(
-    if lower.find("!sauce bot") == -1:
+    if lower.find("!sauce bot") != 0:
         return
     if lower == "!sauce bot info":
         message_groupme("Hi, I'm Sauce Bot, a totally useless bot originally built "+
@@ -25,12 +24,16 @@ def parse_user_input(text, group_id):
         message_groupme(get_items_tracked(group_id), group_id)
         return
     if lower.find("track") != -1:
-        item = text[text.find("track ")+6:]
+        item = lower[lower.find("track ")+6:]
         message_groupme(try_to_add(item, group_id), group_id)
         return 
     if lower.find("add") != -1:
-        item = text[text.find("add ")+4:]
+        item = lower[lower.find("add ")+4:]
         message_groupme(try_to_add(item, group_id), group_id)
+        return
+    if lower.find("remove") != -1:
+        item = lower[lower.find("remove ")+7:]
+        message_groupme(try_to_remove(item, group_id), group_id)
         return
     message_groupme("Hi there, I'm just a new bot, and I don't know that command yet!", group_id)
 
@@ -68,6 +71,24 @@ def load_dining_pages():
         full_h["date"] = time.strftime(time.time(), "%Y %m %d")
     with open("stored_menu.json", "w") as f:
         json.dump(full_h, f)
+
+def try_to_remove(item, group_id):
+    items_tracked = load_list_to_check(group_id)
+    for food in items_tracked:
+        if food.lower() == item.lower():
+            return remove_food_item(item)
+        
+    suggestion = ""
+    ratio = 0
+    for food in items_tracked:
+        r = fuzz.ratio(food, item)
+        if r > ratio:
+            ratio = r
+            suggestion = food
+    if suggestion == "":
+        return remove_food_item(item)
+    return "I couldn't find that specific food item, did you mean {}".format(suggestion)
+
 
 
 def get_items_tracked(group_id):
@@ -165,13 +186,16 @@ def remove_food_item(item):
     if not os.path.exists("check.json"):
         with open("check.json", "w") as f:
             json.dump({}, f)
-        return 0
+        return "Looks like you weren't tracking any items, so there was nothing for me to remove!"
     with open("check.json", "r") as f:
         data = json.load(f)
     existing = data.pop(item, None)
     if existing is not None:
         with open("check.json", "w") as f:
             json.dump(data, f)
+        return "Removed {} from tracked food items".format(item)
+    else:
+        return "Looks like that item was not being tracked in the first place"
 
 def parse_page(url):
     text = get_page_dom(url)

@@ -8,7 +8,7 @@ White Sauce Pasta for lunch or dinner. The program should be run daily on a sche
 In order to run the program, you first need to [create a GroupMe bot](https://dev.groupme.com/tutorials/bots). Then, simply create a file called `bot_list.json` and place the following into it
 ```json
 {
-    "bot_id":"YOUR BOT ID GOES HERE"
+    "group_me id":"YOUR BOT ID GOES HERE"
 }
 ```
 Easy money! Now your selected group will receive messages telling when Covel is serving its fantastic (according to Jeremy) White Sauce Pasta
