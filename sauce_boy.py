@@ -8,16 +8,17 @@ from fuzzywuzzy import fuzz
 
 
 def parse_user_input(text, group_id):
+    text = text.strip(" \n\t\r").lower()
     # I wasn't mentioned! :(
-    if text.lower().find("!sauce bot") == -1:
+    if text.find("!sauce bot") == -1:
         return
-    if text.lower() == "!sauce bot info":
-        message_groupme("Hi, I'm Sauce Bot, a totally useless bot originally built \
-        to track White Sauce Pasta at Covel. I've since grown and you can have me \
-        check for other food items in the UCLA dining halls as well!\n\
-        You can get my attention by saying !Sauce Bot and I can do things like\
-        '!Sauce Bot list foods' to get a list of all the items I'm tracking\
-        or '!Sauce Bot add [food item here]' to give me another item to track", group_id)
+    if text == "!sauce bot info":
+        message_groupme("Hi, I'm Sauce Bot, a totally useless bot originally built "+
+        "to track White Sauce Pasta at Covel. I've since grown and you can have me "+
+        "check for other food items in the UCLA dining halls as well!\n" +
+        "You can get my attention by saying !Sauce Bot and I can do things like "+ 
+        "'!Sauce Bot list foods' to get a list of all the items I'm tracking "+
+        "or '!Sauce Bot add [food item here]' to give me another item to track", group_id)
         return
     if text.find("list") != -1:
         message_groupme(get_items_tracked(group_id), group_id)
