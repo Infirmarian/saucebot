@@ -21,6 +21,12 @@ def main():
     x = find_items(full_h, to_check)
     print(format_text(x))
 
+def parse_user_input(text):
+    # I wasn't mentioned! :(
+    if text.find("!Sauce Bot") == -1 and text.find("!sauce bot") == -1:
+        return
+    message_groupme("Hi there, I'm just a new bot, and I don't know that command yet!")
+
 def format_text(items_dict):
     msg = ""
     for item in items_dict:
@@ -83,6 +89,7 @@ def add_food_item(item):
             with open("check.json", "w") as f:
                 json.dump(data, f)
 
+# A functionality to remove 
 def remove_food_item(item):
     if not os.path.exists("check.json"):
         with open("check.json", "w") as f:
