@@ -232,14 +232,15 @@ def parse_page(url):
 
 def store_food_csv(food_list):
     already_found_food = set([])
-    if os.path.exists("food_dict.csv"):
-        with open("food_dict.csv", "r") as f:
-            reader = csv.reader(f)
-            for row in reader:
-                already_found_food.add(row[0])
+    if not os.path.exists("food_dict.csv"):
+        open("food_dict.csv", "w+").close()
+    with open("food_dict.csv", "r") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            already_found_food.add(row[0])
     for food in food_list:
         already_found_food.add(food)
-    with open("food_dict.csv", "w") as f:
+    with open("food_dict.csv", "w", newline='') as f:
         writer = csv.writer(f)
         for item in already_found_food:
             writer.writerow([item])
