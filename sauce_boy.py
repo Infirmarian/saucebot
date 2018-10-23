@@ -35,6 +35,9 @@ def parse_user_input(text, group_id):
         item = lower[lower.find("remove ")+7:]
         message_groupme(try_to_remove(item, group_id), group_id)
         return
+    if lower.find("today") != -1:
+        message_groupme(get_daily_message(group_id), group_id)
+        return
     message_groupme("Hi there, I'm just a new bot, and I don't know that command yet!", group_id)
 
 def try_to_add(item, group_id):
@@ -57,6 +60,12 @@ def try_to_add(item, group_id):
 
 
 def load_dining_pages():
+    if os.path.exists("stored_menu.json"):
+        with open("stored_menu.json", "r") as f:
+            data = json.load(f)
+        if data["date"] == time.strftime("%Y %m %d", time.gmtime()):
+            data.pop("date", None)
+            return data
     dining_list = [
         ["Covel", "http://menu.dining.ucla.edu/Menus/Covel"],
         ["De Neve", "http://menu.dining.ucla.edu/Menus/DeNeve"],
@@ -68,9 +77,11 @@ def load_dining_pages():
         for key in result:
             store_food_csv(result[key])
         full_h[location[0]] = result
-        full_h["date"] = time.strftime(time.time(), "%Y %m %d")
+        full_h["date"] = time.strftime("%Y %m %d", time.gmtime())
     with open("stored_menu.json", "w") as f:
         json.dump(full_h, f)
+    data.pop("date", None)
+    return full_h
 
 def try_to_remove(item, group_id):
     items_tracked = load_list_to_check(group_id)
@@ -140,6 +151,11 @@ def find_items(full_menu, to_check):
                         locations[food][hall] = [meal]
     return locations
 
+def get_daily_message(group_id):
+    h = load_dining_pages()
+    to_check = load_list_to_check(group_id)
+    raw = find_items(h, to_check)
+    return format_text(raw)
 
 def get_page_dom(url):
     r = requests.get(url)
@@ -259,4 +275,4 @@ def message_groupme(msg, group_id, img=None):
         print("Error, message wasn't sent")
 
 
-
+parse_user_input("!Sauce Bot today", "45275471")
