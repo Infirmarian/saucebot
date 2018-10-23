@@ -80,7 +80,7 @@ def load_dining_pages():
         full_h["date"] = time.strftime("%Y %m %d", time.gmtime())
     with open("stored_menu.json", "w") as f:
         json.dump(full_h, f)
-    data.pop("date", None)
+    full_h.pop("date", None)
     return full_h
 
 def try_to_remove(item, group_id):
