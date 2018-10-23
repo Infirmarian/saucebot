@@ -70,6 +70,7 @@ def load_dining_pages():
         ["Covel", "http://menu.dining.ucla.edu/Menus/Covel"],
         ["De Neve", "http://menu.dining.ucla.edu/Menus/DeNeve"],
         ["Bruin Plate", "http://menu.dining.ucla.edu/Menus/BruinPlate"]
+        ["Feast at Rieber", "http://menu.dining.ucla.edu/Menus/FeastAtRieber"]
     ]
     full_h = {}
     for location in dining_list:
