@@ -254,13 +254,13 @@ def load_food_csv():
     
 
 
-def get_bot_id(group_id):
+def get_bot_id(group_id=None):
     with open("bot_list.json", "r") as f:
         data = json.load(f)
-    if group_id in data:
+    if group_id is not None and group_id in data:
         return data[group_id]
-    print("Unable to load bot ID, exiting")
-    return None
+    else:
+        return data
 
 
 def message_groupme(msg, group_id, img=None):
@@ -274,5 +274,10 @@ def message_groupme(msg, group_id, img=None):
     else:
         print("Error, message wasn't sent")
 
+def send_daily_messages():
+    bot_list = get_bot_id()
+    for group_id in bot_list:
+        message_groupme(get_daily_message(group_id), group_id)
 
-parse_user_input("!Sauce Bot today", "45275471")
+if __name__ == "__main__":
+    send_daily_messages()
