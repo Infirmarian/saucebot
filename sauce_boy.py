@@ -69,7 +69,8 @@ def load_dining_pages():
     dining_list = [
         ["Covel", "http://menu.dining.ucla.edu/Menus/Covel"],
         ["De Neve", "http://menu.dining.ucla.edu/Menus/DeNeve"],
-        ["Bruin Plate", "http://menu.dining.ucla.edu/Menus/BruinPlate"]
+        ["Bruin Plate", "http://menu.dining.ucla.edu/Menus/BruinPlate"],
+        ["FEAST at Rieber", "http://menu.dining.ucla.edu/Menus/FeastAtRieber"]
     ]
     full_h = {}
     for location in dining_list:
@@ -231,14 +232,15 @@ def parse_page(url):
 
 def store_food_csv(food_list):
     already_found_food = set([])
-    if os.path.exists("food_dict.csv"):
-        with open("food_dict.csv", "r") as f:
-            reader = csv.reader(f)
-            for row in reader:
-                already_found_food.add(row[0])
+    if not os.path.exists("food_dict.csv"):
+        open("food_dict.csv", "w+").close()
+    with open("food_dict.csv", "r") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            already_found_food.add(row[0])
     for food in food_list:
         already_found_food.add(food)
-    with open("food_dict.csv", "w") as f:
+    with open("food_dict.csv", "w", newline='') as f:
         writer = csv.writer(f)
         for item in already_found_food:
             writer.writerow([item])
