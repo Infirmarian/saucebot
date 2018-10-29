@@ -286,7 +286,5 @@ def send_daily_messages():
     for group_id in bot_list:
         message_groupme(get_daily_message(group_id), group_id)
 
-
-
 if __name__ == "__main__":
     send_daily_messages()
