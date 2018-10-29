@@ -5,6 +5,7 @@ import os
 import csv
 import time
 from fuzzywuzzy import fuzz
+import despacito
 
 
 def parse_user_input(text, group_id):
@@ -37,6 +38,9 @@ def parse_user_input(text, group_id):
         return
     if lower.find("today") != -1:
         message_groupme(get_daily_message(group_id), group_id)
+        return
+    if lower.find("play despacito") != -1:
+        message_groupme(despacito.despacito, group_id)
         return
     message_groupme("Hi there, I'm just a new bot, and I don't know that command yet!", group_id)
 
@@ -281,6 +285,8 @@ def send_daily_messages():
     bot_list = get_bot_id()
     for group_id in bot_list:
         message_groupme(get_daily_message(group_id), group_id)
+
+
 
 if __name__ == "__main__":
     send_daily_messages()
