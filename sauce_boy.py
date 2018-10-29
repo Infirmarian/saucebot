@@ -47,7 +47,8 @@ def try_to_add(item, group_id):
             return add_food_item(food, group_id)
     suggestions = []
     for food in food_list:
-        suggestions.append((food, fuzz.ratio(item, food)))
+        # Provides suggestions if nothing matched exactly. Using fuzzy string matching and contains
+        suggestions.append((food, fuzz.ratio(item, food)+ 50 if food.lower().find(item.lower()) != -1 else 0))
     suggestions.sort(key= lambda tup: tup[1], reverse = True)
     top_5 = suggestions[:5]
     msg = ""
