@@ -64,11 +64,11 @@ def try_to_add(item, group_id):
     return "I wasn't able to find any items close to what you asked for. I'm just a bot and I'm still gathering information, so check back later or try more accurate wording"
 
 
-def load_dining_pages():
+def load_dining_pages(scrape=False):
     if os.path.exists("stored_menu.json"):
         with open("stored_menu.json", "r") as f:
             data = json.load(f)
-        if data["date"] == time.strftime("%Y %m %d", time.gmtime()):
+        if data["date"] == time.strftime("%Y %m %d", time.gmtime()) or scrape:
             data.pop("date", None)
             return data
     dining_list = [
@@ -157,8 +157,8 @@ def find_items(full_menu, to_check):
                         locations[food][hall] = [meal]
     return locations
 
-def get_daily_message(group_id):
-    h = load_dining_pages()
+def get_daily_message(group_id, scrape=False):
+    h = load_dining_pages(scrape)
     to_check = load_list_to_check(group_id)
     raw = find_items(h, to_check)
     return format_text(raw)
@@ -284,7 +284,7 @@ def message_groupme(msg, group_id, img=None):
 def send_daily_messages():
     bot_list = get_bot_id()
     for group_id in bot_list:
-        message_groupme(get_daily_message(group_id), group_id)
+        message_groupme(get_daily_message(group_id, scrape=True), group_id)
 
 if __name__ == "__main__":
     send_daily_messages()
