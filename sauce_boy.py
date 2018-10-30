@@ -68,7 +68,7 @@ def load_dining_pages(scrape=False):
     if os.path.exists("stored_menu.json"):
         with open("stored_menu.json", "r") as f:
             data = json.load(f)
-        if data["date"] == time.strftime("%Y %m %d", time.gmtime()) or scrape:
+        if scrape:
             data.pop("date", None)
             return data
     dining_list = [
