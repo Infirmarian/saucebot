@@ -10,10 +10,15 @@ import despacito
 
 def parse_user_input(text, group_id):
     lower = text.strip(" \n\t\r").lower()
-    # I wasn't mentioned! :(
-    if lower.find("!sauce bot") != 0:
-        return
-    if lower == "!sauce bot info":
+    temp = lower.find("!sauce bot")
+    temp2 = lower.find("!saucebot")
+    if temp != -1:
+        lower = lower[temp+len("!sauce bot"):]
+    elif temp2 != -1:
+        lower = lower[temp2+len("!saucebot"):]
+    else:
+        return # I wasn't mentioned! :(
+    if lower == "info":
         message_groupme("Hi, I'm Sauce Bot, a totally useless bot originally built "+
         "to track White Sauce Pasta at Covel. I've since grown and you can have me "+
         "check for other food items in the UCLA dining halls as well!\n" +
