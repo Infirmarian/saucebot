@@ -13,12 +13,12 @@ def parse_user_input(text, group_id):
     temp = lower.find("!sauce bot")
     temp2 = lower.find("!saucebot")
     if temp != -1:
-        lower = lower[temp+len("!sauce bot"):]
+        lower = lower[temp+len("!sauce bot"):].strip(" \n\t\r")
     elif temp2 != -1:
-        lower = lower[temp2+len("!saucebot"):]
+        lower = lower[temp2+len("!saucebot"):].strip(" \n\t\r")
     else:
         return # I wasn't mentioned! :(
-    if lower == "info":
+    if lower.find("info") != -1:
         message_groupme("Hi, I'm Sauce Bot, a totally useless bot originally built "+
         "to track White Sauce Pasta at Covel. I've since grown and you can have me "+
         "check for other food items in the UCLA dining halls as well!\n" +
