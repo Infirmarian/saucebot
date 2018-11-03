@@ -18,7 +18,7 @@ def parse_user_input(text, group_id):
         lower = lower[temp2+len("!saucebot"):].strip(" \n\t\r")
     else:
         return # I wasn't mentioned! :(
-    if lower.find("info") != -1:
+    if lower =="info":
         message_groupme("Hi, I'm Sauce Bot, a totally useless bot originally built "+
         "to track White Sauce Pasta at Covel. I've since grown and you can have me "+
         "check for other food items in the UCLA dining halls as well!\n" +
@@ -70,12 +70,11 @@ def try_to_add(item, group_id):
 
 
 def load_dining_pages(scrape=False):
-    if os.path.exists("stored_menu.json"):
+    if os.path.exists("stored_menu.json") and not scrape:
         with open("stored_menu.json", "r") as f:
             data = json.load(f)
-        if scrape:
-            data.pop("date", None)
-            return data
+        data.pop("date", None)
+        return data
     dining_list = [
         ["Covel", "http://menu.dining.ucla.edu/Menus/Covel"],
         ["De Neve", "http://menu.dining.ucla.edu/Menus/DeNeve"],
@@ -162,8 +161,8 @@ def find_items(full_menu, to_check):
                         locations[food][hall] = [meal]
     return locations
 
-def get_daily_message(group_id, scrape=False):
-    h = load_dining_pages(scrape)
+def get_daily_message(group_id):
+    h = load_dining_pages(False)
     to_check = load_list_to_check(group_id)
     raw = find_items(h, to_check)
     return format_text(raw)
@@ -288,8 +287,9 @@ def message_groupme(msg, group_id, img=None):
 
 def send_daily_messages():
     bot_list = get_bot_id()
+    load_dining_pages(scrape=True)
     for group_id in bot_list:
-        message_groupme(get_daily_message(group_id, scrape=True), group_id)
+        message_groupme(get_daily_message(group_id), group_id)
 
 if __name__ == "__main__":
     send_daily_messages()
