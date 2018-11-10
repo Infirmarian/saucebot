@@ -76,10 +76,10 @@ def load_dining_pages(scrape=False):
         data.pop("date", None)
         return data
     dining_list = [
-        ["Covel", "http://menu.dining.ucla.edu/Menus/Covel"],
-        ["De Neve", "http://menu.dining.ucla.edu/Menus/DeNeve"],
-        ["Bruin Plate", "http://menu.dining.ucla.edu/Menus/BruinPlate"],
-        ["FEAST at Rieber", "http://menu.dining.ucla.edu/Menus/FeastAtRieber"]
+        ["Covel", "http://menu.dining.ucla.edu/Menus/Covel/today"],
+        ["De Neve", "http://menu.dining.ucla.edu/Menus/DeNeve/today"],
+        ["Bruin Plate", "http://menu.dining.ucla.edu/Menus/BruinPlate/today"],
+        ["FEAST at Rieber", "http://menu.dining.ucla.edu/Menus/FeastAtRieber/today"]
     ]
     full_h = {}
     for location in dining_list:
