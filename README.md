@@ -1,5 +1,5 @@
 # Sauce Bot
-### This program is REALLY useless
+![Sauce Bot](saucebot.png)
 #### Description
 This program is intended to scrape the UCLA Dining Halls menu daily and determine if selected food items are available in the dining halls. Users can add or remove food items.
 
@@ -12,7 +12,7 @@ In order to run the program, you first need to [create a GroupMe bot](https://de
 ```
 Now to run the bot on a server, you can just run the command using nohup, eg
 ```python
-nohup python3 sauce_bot.py &
+nohup python3 flask_server.py &
 ```
 
 In order to get the daily updates, the main method of sauce_boy.py needs to be run on a daily scheduler like crontab, which can be accessed by `crontab -e`. Then add a line like `* 14 * * * cd ~/sauce; sudo python3 sauce_boy.py` to run daily at 14:00 UTC (7 am Pacific Time). 

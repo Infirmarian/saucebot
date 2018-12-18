@@ -275,15 +275,24 @@ def get_bot_id(group_id=None):
 
 
 def message_groupme(msg, group_id, img=None):
-    data = {
-        "bot_id"  : get_bot_id(group_id),
-        "text"    : msg
-    }
-    response = requests.post("https://api.groupme.com/v3/bots/post", data=data)
-    if response.status_code < 400:
-        print("Bot successfully posted message!")
-    else:
-        print("Error, message wasn't sent")
+    # Groupme limits the number of characters to post at ~1000, so if we exceed 990 chars, the message
+    # needs to be broken up
+    i = 0
+    messages = []
+    while(i < len(msg)):
+        messages.append(msg[i:i+990])
+        i+=990
+    for message in messages:
+        data = {
+            "bot_id"  : get_bot_id(group_id),
+            "text"    : message
+        }
+        response = requests.post("https://api.groupme.com/v3/bots/post", data=data)
+        if response.status_code < 400:
+            print("Bot successfully posted message!")
+        else:
+            print("Error, message wasn't sent")
+        time.sleep(1)
 
 def send_daily_messages():
     bot_list = get_bot_id()
