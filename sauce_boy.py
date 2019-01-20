@@ -6,48 +6,39 @@ import csv
 import time
 from fuzzywuzzy import fuzz
 import despacito
-
+import parse
+import scrape
 
 def parse_user_input(text, group_id):
-    lower = text.strip(" \n\t\r").lower()
-    temp = lower.find("!sauce bot")
-    temp2 = lower.find("!saucebot")
-    if temp != -1:
-        lower = lower[temp+len("!sauce bot"):].strip(" \n\t\r")
-    elif temp2 != -1:
-        lower = lower[temp2+len("!saucebot"):].strip(" \n\t\r")
-    else:
-        return # I wasn't mentioned! :(
-    if lower =="info":
-        message_groupme("Hi, I'm Sauce Bot, a totally useless bot originally built "+
-        "to track White Sauce Pasta at Covel. I've since grown and you can have me "+
-        "check for other food items in the UCLA dining halls as well!\n" +
-        "You can get my attention by saying !Sauce Bot and I can do things like "+ 
-        "'!Sauce Bot list foods' to get a list of all the items I'm tracking "+
-        "or '!Sauce Bot add [food item here]' to give me another item to track", group_id)
-        return
-    if lower.find("list") != -1:
-        message_groupme(get_items_tracked(group_id), group_id)
-        return
-    if lower.find("track") != -1:
-        item = lower[lower.find("track ")+6:]
-        message_groupme(try_to_add(item, group_id), group_id)
-        return 
-    if lower.find("add") != -1:
-        item = lower[lower.find("add ")+4:]
-        message_groupme(try_to_add(item, group_id), group_id)
-        return
-    if lower.find("remove") != -1:
-        item = lower[lower.find("remove ")+7:]
-        message_groupme(try_to_remove(item, group_id), group_id)
-        return
-    if lower.find("today") != -1:
-        message_groupme(get_daily_message(group_id), group_id)
-        return
-    if lower.find("play despacito") != -1:
-        message_groupme(despacito.despacito, group_id)
-        return
-    message_groupme("Hi there, I'm just a new bot, and I don't know that command yet!", group_id)
+    resp = parse.parse_message(text)
+    todo = resp["tag"]
+    if todo is not None:
+        if todo == "info":
+            message_groupme(resp["value"], group_id)
+        elif todo == "list":
+            message_groupme(get_items_tracked(group_id), group_id)
+        elif todo == "add":
+            message_groupme(try_to_add(resp["value"], group_id), group_id)
+        elif todo == "remove":
+            message_groupme(try_to_remove(resp["value"], group_id), group_id)
+        elif todo == "today":
+            message_groupme(get_daily_message(group_id), group_id)
+        elif todo == "despacito":
+            message_groupme(despacito.despacito, group_id)
+        elif todo == "hours":
+            message_groupme(resp["value"], group_id)
+        else:
+            message_groupme("Sorry, I don't know that command!", group_id)
+
+
+def get_hours(hall):
+    data = scrape.load_hours()
+    if data[hall] == {}:
+        return "{} is closed today".format(hall)
+    string = "The hours in {} today are:\n".format(hall)
+    for time in data[hall]:
+        string += "{}: {}\n".format(time, data[hall][time])
+    return string
 
 def try_to_add(item, group_id):
     food_list = load_food_csv()
@@ -109,7 +100,6 @@ def try_to_remove(item, group_id):
     if suggestion == "":
         return remove_food_item(item, group_id)
     return "I couldn't find that specific food item, did you mean {}".format(suggestion)
-
 
 
 def get_items_tracked(group_id):
@@ -264,7 +254,6 @@ def load_food_csv():
     return f_list
     
 
-
 def get_bot_id(group_id=None):
     with open("bot_list.json", "r") as f:
         data = json.load(f)
@@ -297,6 +286,7 @@ def message_groupme(msg, group_id, img=None):
 def send_daily_messages():
     bot_list = get_bot_id()
     load_dining_pages(scrape=True)
+    scrape.get_save_hours()  # Get the hours for the day
     for group_id in bot_list:
         message_groupme(get_daily_message(group_id), group_id)
 
