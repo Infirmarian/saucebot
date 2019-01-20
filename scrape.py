@@ -28,7 +28,4 @@ def load_hours():
     with open("hours.json", "r") as f:
         data = json.load(f)
     return data
-
-
-get_save_hours()
     

@@ -26,7 +26,7 @@ def parse_user_input(text, group_id):
         elif todo == "despacito":
             message_groupme(despacito.despacito, group_id)
         elif todo == "hours":
-            message_groupme(resp["value"], group_id)
+            message_groupme(get_hours(resp["value"]), group_id)
         else:
             message_groupme("Sorry, I don't know that command!", group_id)
 
