@@ -1,3 +1,4 @@
+# Copyright Robert Geil 2019
 from bs4 import BeautifulSoup
 import requests
 import json
@@ -37,7 +38,7 @@ def get_hours(hall):
         return "{} is closed today".format(hall)
     string = "The hours in {} today are:\n".format(hall)
     for time in data[hall]:
-        string += "{}: {}\n".format(time, data[hall][time])
+        string += "{}: {}\n".format(time if time != "Late" else "Late Night", data[hall][time])
     return string
 
 def try_to_add(item, group_id):
@@ -60,30 +61,6 @@ def try_to_add(item, group_id):
     return "I wasn't able to find any items close to what you asked for. I'm just a bot and I'm still gathering information, so check back later or try more accurate wording"
 
 
-def load_dining_pages(scrape=False):
-    if os.path.exists("stored_menu.json") and not scrape:
-        with open("stored_menu.json", "r") as f:
-            data = json.load(f)
-        data.pop("date", None)
-        return data
-    dining_list = [
-        ["Covel", "http://menu.dining.ucla.edu/Menus/Covel/today"],
-        ["De Neve", "http://menu.dining.ucla.edu/Menus/DeNeve/today"],
-        ["Bruin Plate", "http://menu.dining.ucla.edu/Menus/BruinPlate/today"],
-        ["FEAST at Rieber", "http://menu.dining.ucla.edu/Menus/FeastAtRieber/today"]
-    ]
-    full_h = {}
-    for location in dining_list:
-        result = parse_page(location[1])
-        for key in result:
-            store_food_csv(result[key])
-        full_h[location[0]] = result
-        full_h["date"] = time.strftime("%Y %m %d", time.gmtime())
-    with open("stored_menu.json", "w") as f:
-        json.dump(full_h, f)
-    full_h.pop("date", None)
-    return full_h
-
 def try_to_remove(item, group_id):
     items_tracked = load_list_to_check(group_id)
     for food in items_tracked:
@@ -101,22 +78,14 @@ def try_to_remove(item, group_id):
         return remove_food_item(item, group_id)
     return "I couldn't find that specific food item, did you mean {}".format(suggestion)
 
-
 def get_items_tracked(group_id):
     l = load_list_to_check(group_id)
     msg = "I'm currently tracking "
     if len(l) == 0:
         return "I'm not tracking any items! To add an item, say\n!Sauce Bot add [insert item here]"
-    if len(l) == 1:
-        return msg + l[0]
-    if len(l) == 2:
-        return msg + l[0] +" and "+l[1]
-    if len(l) > 2:
-        for i in range(len(l)-1):
-            msg += l[i]+", "
-        msg += "and "+l[-1]
+    for i in range(len(l)):
+        msg += "-"+l[i]+"\n"
     return msg
-
 
 def format_text(items_dict):
     msg = ""
@@ -152,17 +121,10 @@ def find_items(full_menu, to_check):
     return locations
 
 def get_daily_message(group_id):
-    h = load_dining_pages(False)
+    h = scrape.load_dining_pages(False)
     to_check = load_list_to_check(group_id)
     raw = find_items(h, to_check)
     return format_text(raw)
-
-def get_page_dom(url):
-    r = requests.get(url)
-    if r.status_code < 400 and r.text is not None:
-        return r.text
-    print("Error, the page {} was unable to be reached, or no data was delivered.".format(url))
-
 
 def load_list_to_check(group_id):
     if not os.path.exists("check.json"):
@@ -213,36 +175,7 @@ def remove_food_item(item, group_id):
     else:
         return "Looks like that item was not being tracked in the first place"
 
-def parse_page(url):
-    text = get_page_dom(url)
-    if text is None:
-        return
-    soup = BeautifulSoup(text, "lxml")
-    meals = soup.select(".menu-block")
-    return_val = {}
-    for meal in meals:
-        name = meal.h3.text
-        food_list = meal.select("a.recipelink")
-        return_val[name] = []
-        for food in food_list:
-            return_val[name].append(food.text)
-    return return_val
 
-
-def store_food_csv(food_list):
-    already_found_food = set([])
-    if not os.path.exists("food_dict.csv"):
-        open("food_dict.csv", "w+").close()
-    with open("food_dict.csv", "r") as f:
-        reader = csv.reader(f)
-        for row in reader:
-            already_found_food.add(row[0])
-    for food in food_list:
-        already_found_food.add(food)
-    with open("food_dict.csv", "w", newline='') as f:
-        writer = csv.writer(f)
-        for item in already_found_food:
-            writer.writerow([item])
 
 def load_food_csv():
     f_list = []
@@ -285,7 +218,7 @@ def message_groupme(msg, group_id, img=None):
 
 def send_daily_messages():
     bot_list = get_bot_id()
-    load_dining_pages(scrape=True)
+    scrape.load_dining_pages(scrape=True)
     scrape.get_save_hours()  # Get the hours for the day
     for group_id in bot_list:
         message_groupme(get_daily_message(group_id), group_id)

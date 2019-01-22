@@ -1,4 +1,4 @@
-# Robert Geil 2019
+# Copyright Robert Geil 2019
 import re
 
 def parse_message(msg):
