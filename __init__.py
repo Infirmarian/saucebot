@@ -1,14 +1,17 @@
 # Copyright Robert Geil 2019
 
 import sqlite3
-import os
 import sys
+import logging
+import logging.config
+import json
 
 food_dictionary_table_query = '''
 	CREATE TABLE IF NOT EXISTS menu(
-	name VARCHAR(50) PRIMARY KEY,
+	name VARCHAR(80) PRIMARY KEY,
 	frequency INTEGER
 	);'''
+
 bot_list_table_query = '''
 	CREATE TABLE IF NOT EXISTS bots(
 	bot_id VARCHAR(30),
@@ -17,7 +20,7 @@ bot_list_table_query = '''
 	);'''
 
 def setup():
-	# Create file for the database if it doesn't already exist
+	# SQLite Database Setup
 	try:
 		conn = create_connection("sauce_data.db")
 		c = conn.cursor()
@@ -26,6 +29,13 @@ def setup():
 		conn.close()
 	except Exception as e:
 		print(e, file=sys.stderr)
+
+	# Logging setup
+	with open("logs/logging.json") as f:
+		data = json.load(f)
+	logging.config.dictConfig(data)
+	logger = logging.getLogger(__name__)
+	logger.info("Setup Completed")
 
 
 def create_connection(file):

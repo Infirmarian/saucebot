@@ -8,4 +8,4 @@ hours.json
 venv/
 .idea/
 *.db
-
+*.log

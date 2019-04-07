@@ -1,5 +1,8 @@
 # Copyright Robert Geil 2019
 import re
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def parse_message(msg):
