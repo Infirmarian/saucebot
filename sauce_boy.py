@@ -9,6 +9,7 @@ from fuzzywuzzy import fuzz
 import despacito
 import parse
 import scrape
+import logging
 
 def parse_user_input(text, group_id):
     resp = parse.parse_message(text)
@@ -80,7 +81,7 @@ def try_to_remove(item, group_id):
 
 def get_items_tracked(group_id):
     l = load_list_to_check(group_id)
-    msg = "I'm currently tracking "
+    msg = "I'm currently tracking\n"
     if len(l) == 0:
         return "I'm not tracking any items! To add an item, say\n!Sauce Bot add [insert item here]"
     for i in range(len(l)):
@@ -151,7 +152,7 @@ def add_food_item(item, group_id):
             data = json.load(f)
         if group_id not in data:
             data[group_id] = {item:0}
-        if item not in data[group_id]:
+        elif item not in data[group_id]:
             data[group_id][item] = 0
         else:
             return "{} was already being tracked!".format(item)

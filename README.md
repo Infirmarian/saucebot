@@ -1,5 +1,5 @@
 # Sauce Bot
-![Sauce Bot](saucebot.png)
+![Sauce Bot](static/saucebot.png)
 #### Description
 This program is intended to scrape the UCLA Dining Halls menu daily and determine if selected food items are available in the dining halls. Users can add or remove food items.
 #### User Commands

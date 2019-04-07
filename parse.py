@@ -1,6 +1,7 @@
 # Copyright Robert Geil 2019
 import re
 
+
 def parse_message(msg):
     lower = msg.strip(" \n\t\r").lower()
     temp = lower.find("!sauce bot")
@@ -31,7 +32,10 @@ def parse_message(msg):
         return {"tag":"remove", "value":item}
     if lower.find("hours") != -1:
         hrs = match_hours(lower)
-        return {"tag":"hours", "value":hrs}
+        if hrs is None:
+            return {"tag":"unknown", "value":None}
+        else:
+            return {"tag":"hours", "value":hrs}
     if lower.find("today") != -1:
         return {"tag":"today", "value":None}
     if lower.find("play despacito") != -1:
@@ -44,6 +48,10 @@ reg_covel = re.compile(r"[Cc]ovel")
 reg_deneve = re.compile(r"[Dd]e ?[Nn]eve")
 reg_bplate = re.compile(r"([Bb] ?[Pp]late)|[Bb]ruin [Pp]late")
 reg_feast = re.compile(r"[Ff]east")
+reg_rende = re.compile(r"([Rr]end)|([Rr]endezvous)")
+reg_bcafe = re.compile(r"([Bb]caf[eé])|([Bb]ruin [Cc]af[eé])")
+reg_1919 = re.compile(r"([Cc]af[eé] 1919)")
+reg_study = re.compile(r"([Tt]he [Ss]tudy)")
 
 
 def match_hours(msg):
@@ -55,3 +63,12 @@ def match_hours(msg):
         return "Bruin Plate"
     if reg_feast.search(msg):
         return "FEAST at Rieber"
+    if reg_rende.search(msg):
+        return "Rendezvous"
+    if reg_1919.search(msg):
+        return "Café 1919"
+    if reg_study.search(msg):
+        return "The Study"
+    if reg_bcafe.search(msg):
+        return "Bruin Café"
+    return None
