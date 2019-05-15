@@ -2,18 +2,25 @@ import sqlalchemy
 import os
 DB_USER = os.environ['DB_USER']
 DB_PASSWORD = os.environ['DB_PASSWORD']
-DATABASE = os.environ['DB_HOST']
+DATABASE = os.environ['DB_NAME']
+CLOUD_SQL_CONN_NAME = os.environ['PSQL_CLOUD_INSTANCE']
 
-db = sqlalchemy.create_engine(
-    # Equivalent URL:
-    # mysql+pymysql://<db_user>:<db_pass>@/<db_name>?unix_socket=/cloudsql/<cloud_sql_instance_name>
+db_pool = sqlalchemy.create_engine(
     sqlalchemy.engine.url.URL(
-        drivername='mysql+pymysql',
+        drivername='postgres+pg8000',
         username=DB_USER,
         password=DB_PASSWORD,
         database=DATABASE,
         query={
-            'unix_socket': '/cloudsql/{}'.format(cloud_sql_connection_name)
+            'unix_sock': '/cloudsql/{}/.s.PGSQL.5432'.format(CLOUD_SQL_CONN_NAME)
         }
     ),
 )
+
+def execute_query(query, results=False):
+    rs = None
+    with db_pool.connect() as conn:
+        exe = conn.execute(query)
+        if results:
+            rs = exe.fetchall()
+    return rs
