@@ -1,11 +1,3 @@
-gmt.json
-bot_list.json
-check.json
-food_dict.csv
-stored_menu.json
-hours.json
-*.pyc
-venv/
 .idea/
-*.db
-*.log
+__pycache__/
+venv/

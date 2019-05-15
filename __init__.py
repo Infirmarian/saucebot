@@ -17,6 +17,7 @@ bot_list_table = '''
 	CREATE TABLE IF NOT EXISTS bots(
 	bot_id VARCHAR(30),
 	group_id INTEGER,
+	send_message INTEGER DEFAULT 1,
 	CONSTRAINT pk PRIMARY KEY (bot_id,group_id)
 	);'''
 
@@ -74,7 +75,7 @@ def setup():
 		data = json.load(f)
 	logging.config.dictConfig(data)
 	logger = logging.getLogger(__name__)
-	logger.info("Setup Completed")
+	logger.info("__init.py__ Completed Setup")
 
 
 def create_connection(file):

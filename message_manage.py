@@ -9,7 +9,6 @@ from fuzzywuzzy import fuzz
 import despacito
 import parse
 import scrape
-import logging
 
 def parse_user_input(text, group_id):
 	resp = parse.parse_message(text)
