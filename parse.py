@@ -4,57 +4,66 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
-def parse_message(msg):
-    lower = msg.strip(" \n\t\r").lower()
-    temp = lower.find("!sauce bot")
-    temp2 = lower.find("!saucebot")
-    if temp != -1:
-        lower = lower[temp+len("!sauce bot"):].strip(" \n\t\r")
-    elif temp2 != -1:
-        lower = lower[temp2+len("!saucebot"):].strip(" \n\t\r")
-    else:
-        return {"tag":None, "value":None} # I wasn't mentioned! :(
-    if lower == "info":
-        return {"tag":"info", "value":"Hi, I'm Sauce Bot, a totally useless bot originally built "+
-        "to track White Sauce Pasta at Covel. I've since grown and you can have me "+
-        "check for other food items in the UCLA dining halls as well!\n" +
-        "You can get my attention by saying !Sauce Bot and I can do things like "+ 
-        "'!Sauce Bot list foods' to get a list of all the items I'm tracking "+
-        "or '!Sauce Bot add [food item here]' to give me another item to track"}
-    if lower.find("list") != -1:
-        return {"tag":"list", "value":None}
-    if lower.find("track") != -1:
-        item = lower[lower.find("track ")+6:]
-        return {"tag":"add", "value":item}
-    if lower.find("add") != -1:
-        item = lower[lower.find("add ")+4:]
-        return {"tag":"add", "value":item}
-    if lower.find("remove") != -1:
-        item = lower[lower.find("remove ")+7:]
-        return {"tag":"remove", "value":item}
-    if lower.find("hours") != -1:
-        hrs = match_hours(lower)
-        if hrs is None:
-            return {"tag":"unknown", "value":None}
-        else:
-            return {"tag":"hours", "value":hrs}
-    if lower.find("today") != -1:
-        return {"tag":"today", "value":None}
-    if lower.find("play despacito") != -1:
-        return {"tag":"despacito", "value":None}
-    return {"tag":"unknown", "value":None}
-
     
 # Regex for various dining halls
 reg_covel = re.compile(r"[Cc]ovel")
 reg_deneve = re.compile(r"[Dd]e ?[Nn]eve")
 reg_bplate = re.compile(r"([Bb] ?[Pp]late)|[Bb]ruin [Pp]late")
-reg_feast = re.compile(r"[Ff]east")
-reg_rende = re.compile(r"([Rr]end)|([Rr]endezvous)")
-reg_bcafe = re.compile(r"([Bb]caf[eé])|([Bb]ruin [Cc]af[eé])")
-reg_1919 = re.compile(r"([Cc]af[eé] 1919)")
-reg_study = re.compile(r"([Tt]he [Ss]tudy)")
+reg_feast = re.compile(r"[Ff]east|FEAST")
+reg_rende = re.compile(r"[Rr]ende|[Rr]endezvous")
+reg_bcafe = re.compile(r"[Bb]caf[eé]|[Bb]ruin [Cc]af[eé]")
+reg_1919 = re.compile(r"[Cc]af[eé] 1919")
+reg_study = re.compile(r"[Tt]he [Ss]tudy( at [Hh]edrick)?")
+
+saucebot_regex = re.compile(r'![Ss]auce ?[Bb]ot')
+hours_regex = re.compile(r'[Ww]hat [Tt]ime|[Hh]ours|[Oo]pen')
+list_regex = re.compile(r'[Ll]ist|[Tt]racked|[Tt]racking')
+add_regex = re.compile(r'[Aa]dd|[Tt]rack')
+remove_regex = re.compile(r'[Rr]emove')
+today_regex = re.compile(r'[Mm]enu|[Tt]oday')
+info_regex = re.compile(r'[Aa]bout|[Ii]nfo')
+
+def parse_intent(raw):
+    matches = saucebot_regex.findall(raw)
+    if len(matches) == 0:
+        return {'tag': None}
+    # Generate the remaining string to be detected
+    raw = raw[raw.find(matches[0])+len(matches[0]):]
+
+    # Check for the hours
+    if hours_regex.search(raw):
+        hall = match_hours(raw)
+        if hall is not None:
+            return {'tag': 'hours', 'value': hall}
+
+    if list_regex.search(raw):
+        return {'tag': 'list'}
+
+    if add_regex.search(raw):
+        matches = add_regex.findall(raw)
+        substring = raw[raw.find(matches[0])+len(matches[0]):]
+        tokens = _tokenize_string(substring)
+        return {'tag': 'add', 'value': tokens}
+
+    if remove_regex.search(raw):
+        matches = remove_regex.findall(raw)
+        substring = raw[raw.find(matches[0])+len(matches[0]):]
+        tokens = _tokenize_string(substring)
+        return {'tag': 'remove', 'value': tokens}
+
+    if today_regex.search(raw):
+        return {'tag': 'today'}
+
+    if info_regex.search(raw):
+        return {'tag': 'info'}
+
+    return {'tag': 'unknown'}
+
+
+def _tokenize_string(string):
+    tokens = string.strip('\n\t').split(' ')
+    tokens = list(filter(lambda x: x != '', tokens))
+    return tokens
 
 
 def match_hours(msg):
@@ -65,13 +74,13 @@ def match_hours(msg):
     if reg_bplate.search(msg):
         return "Bruin Plate"
     if reg_feast.search(msg):
-        return "FEAST at Rieber"
+        return "FEAST"
     if reg_rende.search(msg):
         return "Rendezvous"
     if reg_1919.search(msg):
         return "Café 1919"
     if reg_study.search(msg):
-        return "The Study"
+        return "The Study at Hedrick"
     if reg_bcafe.search(msg):
         return "Bruin Café"
     return None

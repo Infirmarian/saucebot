@@ -104,5 +104,3 @@ def scrape_and_store_hours():
     query = insert_hours.format(', '.join(query_values))
     db.execute_query(query, values=time_values)
 
-scrape_and_store_menu()
-scrape_and_store_hours()

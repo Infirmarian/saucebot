@@ -2,7 +2,9 @@
 
 from flask import Flask, request, render_template
 import database_interface as db
+import messenger
 import response
+import tracked_item
 app = Flask(__name__)
 
 
@@ -10,10 +12,22 @@ app = Flask(__name__)
 def hello_world():
     return 'Hello World!'
 
+
 @app.route('/db')
 def database():
     rs = db.execute_query('SELECT * FROM food LIMIT 10;', results=True)
     return render_template('db_result.html', results=rs)
+
+
+@app.route('/i')
+def insert():
+    token = request.args.get('t')
+    res = tracked_item.load_token_query(token)
+    if len(res) == 0:
+        return res[0]
+    else:
+        messenger.message_group(res[0], res[1])
+        return res[0]
 
 
 @app.route('/groupme', methods=['POST'])

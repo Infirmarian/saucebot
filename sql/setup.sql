@@ -37,3 +37,11 @@ CREATE TABLE IF NOT EXISTS hours(
     day DATE DEFAULT NOW(),
     PRIMARY KEY (meal, hour, day, hall)
 );
+
+CREATE TABLE IF NOT EXISTS temporary_queries(
+    token VARCHAR(10),
+    group_id VARCHAR(20),
+    food_id INTEGER,
+    time TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (token)
+);
