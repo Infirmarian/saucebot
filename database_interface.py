@@ -17,10 +17,14 @@ db_pool = sqlalchemy.create_engine(
     ),
 )
 
-def execute_query(query, results=False):
+def execute_query(query, values=None, results=False):
     rs = None
     with db_pool.connect() as conn:
-        exe = conn.execute(query)
+        if values is not None:
+            exe = conn.execute(query, values)
+        else:
+            exe = conn.execute(query)
+
         if results:
             rs = exe.fetchall()
     return rs

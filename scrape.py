@@ -4,7 +4,19 @@ import requests
 import json
 import os
 import time
-import csv
+import database_interface as db
+dining_list = {
+    "Covel":"http://menu.dining.ucla.edu/Menus/Covel/today",
+    "De Neve":"http://menu.dining.ucla.edu/Menus/DeNeve/today",
+    "Bruin Plate":"http://menu.dining.ucla.edu/Menus/BruinPlate/today",
+    "FEAST":"http://menu.dining.ucla.edu/Menus/FeastAtRieber/today"
+}
+
+insert_menu_query = '''
+INSERT INTO food (name) VALUES {}
+ON CONFLICT DO NOTHING;
+'''
+
 
 def get_page_dom(url):
     r = requests.get(url)
@@ -41,18 +53,28 @@ def parse_page(url):
             return_val[name].append(food.text)
     return return_val
 
+def scrape_and_store_menu():
+    food_list = set()
+    menus = {}
+    for hall, url in dining_list.items():
+        result = parse_page(url)
+        menus[hall] = result
+        for _, items in result.items():
+            food_list = food_list.union(items)
+
+    items = ', '.join(('(%s)' for _ in food_list))
+    final_all_item_query = insert_menu_query.format(items)
+    db.execute_query(final_all_item_query, values=items, results=False)
+
+
+scrape_and_store_menu()
+
 def load_dining_pages(scrape=False):
     if os.path.exists("stored_menu.json") and not scrape:
         with open("stored_menu.json", "r") as f:
             data = json.load(f)
         data.pop("date", None)
         return data
-    dining_list = [
-        ["Covel", "http://menu.dining.ucla.edu/Menus/Covel/today"],
-        ["De Neve", "http://menu.dining.ucla.edu/Menus/DeNeve/today"],
-        ["Bruin Plate", "http://menu.dining.ucla.edu/Menus/BruinPlate/today"],
-        ["FEAST at Rieber", "http://menu.dining.ucla.edu/Menus/FeastAtRieber/today"]
-    ]
     full_h = {}
     for location in dining_list:
         result = parse_page(location[1])
@@ -65,24 +87,5 @@ def load_dining_pages(scrape=False):
     full_h.pop("date", None)
     return full_h
 
-def store_food_csv(food_list):
-    already_found_food = set([])
-    if not os.path.exists("food_dict.csv"):
-        open("food_dict.csv", "w+").close()
-    with open("food_dict.csv", "r") as f:
-        reader = csv.reader(f)
-        for row in reader:
-            already_found_food.add(row[0])
-    for food in food_list:
-        already_found_food.add(food)
-    with open("food_dict.csv", "w", newline='') as f:
-        writer = csv.writer(f)
-        for item in already_found_food:
-            writer.writerow([item])
 
-
-def load_hours():
-    with open("hours.json", "r") as f:
-        data = json.load(f)
-    return data
     
