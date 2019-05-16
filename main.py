@@ -1,6 +1,6 @@
 # Copyright Robert Geil 2019
 
-from flask import Flask, request
+from flask import Flask, request, render_template
 import database_interface as db
 import message_manage
 app = Flask(__name__)
@@ -12,7 +12,8 @@ def hello_world():
 
 @app.route('/db')
 def database():
-    return str(db.execute_query('SELECT * FROM food LIMIT 10;', results=True))
+    rs = db.execute_query('SELECT * FROM food LIMIT 10;', results=True)
+    return render_template('db_result.html', results=rs)
 
 
 @app.route('/groupme', methods=['POST'])

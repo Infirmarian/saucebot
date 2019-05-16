@@ -1,4 +1,4 @@
-CREATE TYPE hall AS ENUM ('Covel', 'Bruin Plate', 'De Neve', 'FEAST');
+CREATE TYPE hall AS ENUM ('Covel', 'Bruin Plate', 'De Neve', 'FEAST', 'Bruin Café', 'Café 1919', 'Rendezvous', 'The Study at Hedrick');
 CREATE TYPE mealtime AS ENUM('Breakfast', 'Brunch', 'Lunch', 'Dinner', 'Late Night');
 
 CREATE TABLE IF NOT EXISTS food(
@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS tracked_items(
 CREATE TABLE IF NOT EXISTS hours(
     meal mealtime,
     hour VARCHAR(20),
+    hall hall,
     day DATE DEFAULT NOW(),
-    PRIMARY KEY (meal, hour, day)
+    PRIMARY KEY (meal, hour, day, hall)
 );

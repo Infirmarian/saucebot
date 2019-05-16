@@ -1,10 +1,10 @@
 # Copyright Robert Geil 2019
+
 from bs4 import BeautifulSoup
 import requests
-import json
-import os
-import time
 import database_interface as db
+
+
 dining_list = {
     "Covel":"http://menu.dining.ucla.edu/Menus/Covel/today",
     "De Neve":"http://menu.dining.ucla.edu/Menus/DeNeve/today",
@@ -17,6 +17,14 @@ INSERT INTO food (name) VALUES {}
 ON CONFLICT DO NOTHING;
 '''
 
+insert_today = '''
+INSERT INTO menu (dining_hall, meal, food_id) VALUES {}  ON CONFLICT DO NOTHING;
+'''
+
+insert_hours = '''
+INSERT INTO hours (hall, meal, hour) VALUES {};
+'''
+
 
 def get_page_dom(url):
     r = requests.get(url)
@@ -24,7 +32,7 @@ def get_page_dom(url):
         return r.text
     print("Error, the page {} was unable to be reached, or no data was delivered.".format(url))
 
-def get_save_hours():
+def parse_hours():
     hours_return = {}
     soup = BeautifulSoup(get_page_dom("http://menu.dining.ucla.edu/Hours/Today"), "lxml")
     halls = soup.select(".hours-table tbody tr")
@@ -35,8 +43,7 @@ def get_save_hours():
         for h in hours_open_raw:
             meal = h["class"][1]
             hours_return[title][meal] = h.span.text
-    with open("hours.json", "w") as f:
-        json.dump(hours_return, f)
+    return hours_return
 
 def parse_page(url):
     text = get_page_dom(url)
@@ -50,7 +57,7 @@ def parse_page(url):
         food_list = meal.select("a.recipelink")
         return_val[name] = []
         for food in food_list:
-            return_val[name].append(food.text)
+            return_val[name].append(food.text.strip('\t'))
     return return_val
 
 def scrape_and_store_menu():
@@ -62,30 +69,37 @@ def scrape_and_store_menu():
         for _, items in result.items():
             food_list = food_list.union(items)
 
-    items = ', '.join(('(%s)' for _ in food_list))
+    items = ', '.join('(%s)' for _ in food_list)
     final_all_item_query = insert_menu_query.format(items)
-    db.execute_query(final_all_item_query, values=items, results=False)
+    db.execute_query(final_all_item_query, values=list(food_list), results=False)
 
+    # Add the daily menu into the database
+    item_query = "('{hall}', '{meal}', (SELECT food_id FROM food WHERE name = %s LIMIT 1))"
+    item_list = []
+    query_list = []
+    for hall, menu in menus.items():
+        for meal, items in menu.items():
+            for item in items:
+                item_list.append(item)
+                query_list.append(item_query.format(hall=hall, meal=meal))
 
-scrape_and_store_menu()
+    final_query = insert_today.format(', '.join(query_list))
+    db.execute_query(final_query, values=item_list, results=False)
 
-def load_dining_pages(scrape=False):
-    if os.path.exists("stored_menu.json") and not scrape:
-        with open("stored_menu.json", "r") as f:
-            data = json.load(f)
-        data.pop("date", None)
-        return data
-    full_h = {}
-    for location in dining_list:
-        result = parse_page(location[1])
-        for key in result:
-            store_food_csv(result[key])
-        full_h[location[0]] = result
-        full_h["date"] = time.strftime("%Y %m %d", time.gmtime())
-    with open("stored_menu.json", "w") as f:
-        json.dump(full_h, f)
-    full_h.pop("date", None)
-    return full_h
+def scrape_and_store_hours():
+    item_query = "('{hall}', '{meal}', %s)"
+    query_values = []
+    time_values = []
+    res = parse_hours()
+    for hall, values in res.items():
+        # De-translation from the names that are presented on the webpage
+        if hall == 'FEAST at Rieber':
+            hall = 'FEAST'
+        for meal, hours in values.items():
+            if meal == 'Late':
+                meal = 'Late Night'
+            query_values.append(item_query.format(hall=hall, meal=meal))
+            time_values.append(hours)
 
-
-    
+    query = insert_hours.format(', '.join(query_values))
+    db.execute_query(query, values=time_values)

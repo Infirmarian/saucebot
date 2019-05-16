@@ -21,7 +21,10 @@ def execute_query(query, values=None, results=False):
     rs = None
     with db_pool.connect() as conn:
         if values is not None:
-            exe = conn.execute(query, values)
+            if isinstance(values, list):
+                exe = conn.execute(query, *values)
+            else:
+                exe = conn.execute(query, values)
         else:
             exe = conn.execute(query)
 
