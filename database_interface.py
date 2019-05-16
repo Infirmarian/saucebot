@@ -1,3 +1,5 @@
+# Copyright Robert Geil 2019
+
 import sqlalchemy
 import os
 DB_USER = os.environ['DB_USER']

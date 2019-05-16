@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS food(
 CREATE TABLE IF NOT EXISTS groups(
     group_id VARCHAR(20),
     bot_id VARCHAR(30),
+    notify BOOLEAN,
     PRIMARY KEY (group_id)
 );
 

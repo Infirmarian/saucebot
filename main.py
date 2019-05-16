@@ -2,7 +2,7 @@
 
 from flask import Flask, request, render_template
 import database_interface as db
-import message_manage
+import response
 app = Flask(__name__)
 
 
@@ -19,7 +19,7 @@ def database():
 @app.route('/groupme', methods=['POST'])
 def group_me():
     if request.json['sender_type'] != 'bot':
-        message_manage.parse_user_input(request.json["text"], group_id=request.json["group_id"])
+        response.parse_user_input(request.json["text"], group_id=request.json["group_id"])
     return 'groupme'
 
 
