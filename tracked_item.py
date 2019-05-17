@@ -14,29 +14,34 @@ select_saved_query = '''SELECT group_id, food.food_id, name
                         JOIN food ON food.food_id = temporary_queries.food_id
                         WHERE token = %s AND time > NOW() - INTERVAL '10 minute';'''
 
-URL='saucebot.appspot.com/i?t='
+URL='saucebot.appspot.com'
 chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWYXZ0123456789'
 
 
 def add_tracked_item(name, group_id):
-    query = get_food_id_query.format(' AND '.join('name ~* %s' for _ in name))
+    query = get_food_id_query.format('group_id = %s AND ' + ' AND '.join('name ~* %s' for _ in name))
     item_key = db.execute_query(query, values=name, results=True)
 
     if len(item_key) == 0:
         return "{} doesn't appear to be a valid food item".format(name)
     if len(item_key) > 1:
-        return _generate_temporary_add_urls(item_key, group_id)
+        return _generate_temporary_modify_urls(item_key, group_id, 'i')
 
     db.execute_query(add_food_id_query, values=(group_id, item_key[0][0]))
     return "Now tracking {}".format(item_key[0][1])
 
 
 def remove_tracked_item(name, group_id):
-    item_key = db.execute_query(get_food_id_query, values=name, results=True)
+    query = get_food_id_query.format(' AND '.join('name ~* %s' for _ in name))
+    item_key = db.execute_query(query, values=name, results=True)
+
     if len(item_key) == 0:
         return "{} doesn't appear to be a valid food item".format(name)
+    if len(item_key) > 1:
+        return _generate_temporary_modify_urls(item_key, group_id, 'd')
+
     db.execute_query(delete_food_id_query, values=(group_id, item_key[0][0]))
-    return "No longer tracking {}".format(name)
+    return "No longer tracking {}".format(item_key[0][1])
 
 
 def list_tracked_items(group_id):
@@ -55,21 +60,25 @@ def _generate_random_string(count):
     return result
 
 
-def load_token_query(token):
+def load_token_query(token, insert):
     result = db.execute_query(select_saved_query, values=token, results=True)
     if len(result) == 0:
         return ['Unable to add the selected item']
     result = result[0]
-    db.execute_query(add_food_id_query, values=(result[0], result[1]))
-    return ['Now tracking {}'.format(result[2]), result[0]]
+    if insert:
+        db.execute_query(add_food_id_query, values=(result[0], result[1]))
+        return ['Now tracking {}'.format(result[2]), result[0]]
+    else:
+        db.execute_query(delete_food_id_query, values=(result[0], result[1]))
+        return ['No longer tracking {}'.format(result[2]), result[0]]
 
 
-def _generate_temporary_add_urls(items, group_id):
+def _generate_temporary_modify_urls(items, group_id, i_or_d):
     response = "I couldn't find that exact item, did you mean\n"
     for item in items[:5]:
         token = _generate_random_string(8)
         db.execute_query(generate_saved_query, values=(token, group_id, item[0]))
-        response += '- {item} ({url}{token})\n'.format(item=item[1], url=URL, token=token)
+        response += '- {item} ({url}/{type}?t={token})\n'.format(item=item[1], url=URL, token=token, type=i_or_d)
     return response
 
 

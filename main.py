@@ -30,10 +30,22 @@ def insert():
         return res[0]
 
 
+@app.route('/d')
+def delete():
+    token = request.args.get('t')
+    res = tracked_item.load_token_query(token)
+    if len(res) == 0:
+        return res[0]
+    else:
+        messenger.message_group(res[0], res[1])
+        return res[0]
+
+
 @app.route('/groupme', methods=['POST'])
 def group_me():
     if request.json['sender_type'] != 'bot':
-        response.parse_user_input(request.json["text"], group_id=request.json["group_id"])
+        message = response.generate_user_response(request.json['text'], group_id=str(request.json['group_id']))
+        messenger.message_group(message, str(request.json['group_id']))
     return 'groupme'
 
 
