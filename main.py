@@ -26,10 +26,10 @@ def insert():
     token = request.args.get('t')
     res = tracked_item.load_token_query(token, insert=True)
     if len(res) == 1:
-        return res[0]
+        return "<h1>{}</h1>".format(res[0])
     else:
         messenger.message_group(res[0], res[1])
-        return res[0]
+        return "<h1>{}</h1>".format(res[0])
 
 
 @app.route('/d')
@@ -37,10 +37,10 @@ def delete():
     token = request.args.get('t')
     res = tracked_item.load_token_query(token, insert=False)
     if len(res) == 0:
-        return res[0]
+        return "<h1>{}</h1>".format(res[0])
     else:
         messenger.message_group(res[0], res[1])
-        return res[0]
+        return "<h1>{}</h1>".format(res[0])
 
 
 @app.route('/groupme', methods=['POST'])
@@ -62,6 +62,10 @@ def google_home():
 def daily_scrape():
     return scrape.daily_scrape()
 
+
+@app.route('/internal/db/clear_cache')
+def clear_cache():
+    return tracked_item.purge_query()
 
 
 if __name__ == '__main__':
