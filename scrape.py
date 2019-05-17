@@ -3,7 +3,7 @@
 from bs4 import BeautifulSoup
 import requests
 import database_interface as db
-
+import time
 
 dining_list = {
     "Covel":"http://menu.dining.ucla.edu/Menus/Covel/today",
@@ -25,12 +25,23 @@ insert_hours = '''
 INSERT INTO hours (hall, meal, hour) VALUES {};
 '''
 
+last_scrape = 0
+
+
+def daily_scrape():
+    global last_scrape
+    if time.time() > last_scrape + 3600:
+        scrape_and_store_menu()
+        scrape_and_store_hours()
+        last_scrape = time.time()
+
 
 def get_page_dom(url):
     r = requests.get(url)
     if r.status_code < 400 and r.text is not None:
         return r.text
     print("Error, the page {} was unable to be reached, or no data was delivered.".format(url))
+
 
 def parse_hours():
     hours_return = {}
@@ -44,6 +55,7 @@ def parse_hours():
             meal = h["class"][1]
             hours_return[title][meal] = h.span.text
     return hours_return
+
 
 def parse_page(url):
     text = get_page_dom(url)
@@ -59,6 +71,7 @@ def parse_page(url):
         for food in food_list:
             return_val[name].append(food.text.strip('\t'))
     return return_val
+
 
 def scrape_and_store_menu():
     food_list = set()
@@ -103,4 +116,5 @@ def scrape_and_store_hours():
 
     query = insert_hours.format(', '.join(query_values))
     db.execute_query(query, values=time_values)
+
 

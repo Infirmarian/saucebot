@@ -5,6 +5,8 @@ import database_interface as db
 import messenger
 import response
 import tracked_item
+import scrape
+
 app = Flask(__name__)
 
 
@@ -22,7 +24,7 @@ def database():
 @app.route('/i')
 def insert():
     token = request.args.get('t')
-    res = tracked_item.load_token_query(token)
+    res = tracked_item.load_token_query(token, insert=True)
     if len(res) == 0:
         return res[0]
     else:
@@ -33,7 +35,7 @@ def insert():
 @app.route('/d')
 def delete():
     token = request.args.get('t')
-    res = tracked_item.load_token_query(token)
+    res = tracked_item.load_token_query(token, insert=False)
     if len(res) == 0:
         return res[0]
     else:
@@ -45,6 +47,8 @@ def delete():
 def group_me():
     if request.json['sender_type'] != 'bot':
         message = response.generate_user_response(request.json['text'], group_id=str(request.json['group_id']))
+        if message is None:
+            return ''
         messenger.message_group(message, str(request.json['group_id']))
     return 'groupme'
 
@@ -52,6 +56,12 @@ def group_me():
 @app.route('/google', methods=['POST'])
 def google_home():
     return 'request received'
+
+
+@app.route('/internal/scrape/generate_new_menu_data')
+def scrape():
+    scrape.daily_scrape()
+    return ''
 
 
 if __name__ == '__main__':

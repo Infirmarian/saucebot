@@ -35,6 +35,8 @@ def parse_intent(raw):
         hall = match_hours(raw)
         if hall is not None:
             return {'tag': 'hours', 'value': hall}
+        else:
+            return {'tag': 'generic', 'value': 'Please specify the dining hall you want hours for'}
 
     if list_regex.search(raw):
         return {'tag': 'list'}

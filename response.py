@@ -20,8 +20,12 @@ def generate_user_response(text, group_id):
         return tracked.remove_tracked_item(intention.get('value'), group_id)
     if todo == 'today':
         return get_items_today(group_id)
-    if todo == 'unknown':
-        return "I don't know that command!"
+    if todo == 'info':
+        return get_info_description()
+    if todo == 'generic':
+        return intention.get('value')
+
+    return "I don't know that command!"
 
 
 def get_hours(hall):
@@ -76,3 +80,9 @@ def _format_times(times):
     if len(times) == 3:
         return times[0] + ", " + times[1] + " and " + times[2]
 
+
+def get_info_description():
+    return '''Hi, I'm Saucebot, a friendly bot to track items in the UCLA dining halls! If you give me a list of items, I can track them! To add an item, simply say !saucebot add [item here], and to see all items that are being tracked, say !saucebot list. Some other things I can do are: 
+    - !saucebot remove [item]
+    - !saucebot hours at [dining hall]
+    - !saucebot give me the menu today'''
