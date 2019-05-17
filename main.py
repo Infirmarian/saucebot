@@ -36,7 +36,7 @@ def insert():
 def delete():
     token = request.args.get('t')
     res = tracked_item.load_token_query(token, insert=False)
-    if len(res) == 0:
+    if len(res) == 1:
         return "<h1>{}</h1>".format(res[0])
     else:
         messenger.message_group(res[0], res[1])
@@ -65,7 +65,7 @@ def daily_scrape():
 
 @app.route('/internal/db/clear_cache')
 def clear_cache():
-    return tracked_item.purge_query()
+    return tracked_item.purge_old_cached_queries()
 
 
 if __name__ == '__main__':

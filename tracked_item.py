@@ -14,6 +14,7 @@ select_saved_query = '''SELECT group_id, food.food_id, name
                         JOIN food ON food.food_id = temporary_queries.food_id
                         WHERE token = %s AND time > NOW() - INTERVAL '10 minute';'''
 purge_query = '''DELETE FROM temporary_queries WHERE time < NOW() - INTERVAL '10 minute' RETURNING food_id;'''
+drop_token_query = '''DELETE FROM temporary_queries WHERE token = %s;'''
 
 URL='saucebot.net'
 chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWYXZ0123456789'
@@ -43,7 +44,13 @@ def remove_tracked_item(name, group_id):
     item_key = db.execute_query(query, values=[group_id]+name, results=True)
 
     if len(item_key) == 0:
-        return "{} doesn't appear to be a valid food item".format(' '.join(name))
+        query = get_food_id_query.format(' AND '.join('name ~* %s' for _ in name))
+        item_key = db.execute_query(query, values=name, results=True)
+        if len(item_key) == 0:
+            return "{} doesn't appear to be a valid food item".format(' '.join(name))
+        else:
+            return "{} isn't being tracked".format(' '.join(name))
+
     if len(item_key) > 1:
         return _generate_temporary_modify_urls(item_key, group_id, 'd')
 
@@ -70,13 +77,15 @@ def _generate_random_string(count):
 def load_token_query(token, insert):
     result = db.execute_query(select_saved_query, values=token, results=True)
     if len(result) == 0:
-        return ['Unable to add the selected item']
+        return ['Unable to {} the selected item'.format('add' if insert else 'remove')]
     result = result[0]
     if insert:
         db.execute_query(add_food_id_query, values=(result[0], result[1]))
+        db.execute_query(drop_token_query, values=token)
         return ['Now tracking {}'.format(result[2]), result[0]]
     else:
         db.execute_query(delete_food_id_query, values=(result[0], result[1]))
+        db.execute_query(drop_token_query, values=token)
         return ['No longer tracking {}'.format(result[2]), result[0]]
 
 

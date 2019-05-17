@@ -22,6 +22,8 @@ add_regex = re.compile(r'[Aa]dd|[Tt]rack')
 remove_regex = re.compile(r'[Rr]emove')
 today_regex = re.compile(r'[Mm]enu|[Tt]oday')
 info_regex = re.compile(r'[Aa]bout|[Ii]nfo')
+stop_daily_regex = re.compile(r'[Ss]top( daily)? (updated|messages?)')
+
 
 def parse_intent(raw):
     matches = saucebot_regex.findall(raw)
