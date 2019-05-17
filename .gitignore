@@ -3,3 +3,6 @@ __pycache__/
 venv/
 secrets/
 var.env
+app.yaml
+cron.yaml
+

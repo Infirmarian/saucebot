@@ -25,7 +25,7 @@ def database():
 def insert():
     token = request.args.get('t')
     res = tracked_item.load_token_query(token, insert=True)
-    if len(res) == 0:
+    if len(res) == 1:
         return res[0]
     else:
         messenger.message_group(res[0], res[1])
@@ -59,9 +59,9 @@ def google_home():
 
 
 @app.route('/internal/scrape/generate_new_menu_data')
-def scrape():
-    scrape.daily_scrape()
-    return ''
+def daily_scrape():
+    return scrape.daily_scrape()
+
 
 
 if __name__ == '__main__':

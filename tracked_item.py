@@ -14,7 +14,7 @@ select_saved_query = '''SELECT group_id, food.food_id, name
                         JOIN food ON food.food_id = temporary_queries.food_id
                         WHERE token = %s AND time > NOW() - INTERVAL '10 minute';'''
 
-URL='saucebot.appspot.com'
+URL='saucebot.net'
 chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWYXZ0123456789'
 
 

@@ -22,7 +22,7 @@ INSERT INTO menu (dining_hall, meal, food_id) VALUES {}  ON CONFLICT DO NOTHING;
 '''
 
 insert_hours = '''
-INSERT INTO hours (hall, meal, hour) VALUES {};
+INSERT INTO hours (hall, meal, hour) VALUES {} ON CONFLICT DO NOTHING;
 '''
 
 last_scrape = 0
@@ -34,6 +34,9 @@ def daily_scrape():
         scrape_and_store_menu()
         scrape_and_store_hours()
         last_scrape = time.time()
+        return 'Successfully scraped pages'
+    else:
+        return 'Failed to scrape (error: time since last scrape too little)'
 
 
 def get_page_dom(url):
@@ -98,6 +101,7 @@ def scrape_and_store_menu():
 
     final_query = insert_today.format(', '.join(query_list))
     db.execute_query(final_query, values=item_list, results=False)
+
 
 def scrape_and_store_hours():
     item_query = "('{hall}', '{meal}', %s)"
