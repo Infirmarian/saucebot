@@ -13,7 +13,7 @@ reg_feast = re.compile(r"[Ff]east|FEAST")
 reg_rende = re.compile(r"[Rr]ende|[Rr]endezvous")
 reg_bcafe = re.compile(r"[Bb]caf[eé]|[Bb]ruin [Cc]af[eé]")
 reg_1919 = re.compile(r"[Cc]af[eé] 1919")
-reg_study = re.compile(r"[Tt]he [Ss]tudy( at [Hh]edrick)?")
+reg_study = re.compile(r"([Tt]he )?[Ss]tudy( at [Hh]edrick)?")
 
 saucebot_regex = re.compile(r'![Ss]auce ?[Bb]ot')
 hours_regex = re.compile(r'[Ww]hat [Tt]ime|[Hh]ours|[Oo]pen')

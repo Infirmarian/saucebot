@@ -3,7 +3,7 @@
 import parse
 import database_interface as db
 import tracked_item as tracked
-
+import time
 
 def generate_user_response(text, group_id):
     intention = parse.parse_intent(text)
@@ -86,3 +86,13 @@ def get_info_description():
     - !saucebot remove [item]
     - !saucebot hours at [dining hall]
     - !saucebot give me the menu today'''
+
+
+def generate_daily_messages():
+    query = '''SELECT group_id FROM groups WHERE notify = TRUE'''
+    groups = db.execute_query(query, results=True)
+    results = []
+    for group in groups:
+        results.append([group[0], get_items_today(group[0])])
+    return results
+

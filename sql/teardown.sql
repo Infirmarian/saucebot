@@ -1,4 +1,5 @@
 DROP TABLE IF EXISTS menu;
+DROP TABLE IF EXISTS temporary_queries;
 DROP TABLE IF EXISTS tracked_items;
 DROP TABLE IF EXISTS food;
 DROP TABLE IF EXISTS groups;

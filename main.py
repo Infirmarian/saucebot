@@ -68,5 +68,12 @@ def clear_cache():
     return tracked_item.purge_old_cached_queries()
 
 
+@app.route('/internal/notify/today')
+def send_daily_messages():
+    results = response.generate_daily_messages()
+    for result in results:
+        messenger.message_group(result[1], result[0])
+
+
 if __name__ == '__main__':
     app.run()
