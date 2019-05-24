@@ -45,3 +45,18 @@ CREATE TABLE IF NOT EXISTS temporary_queries(
     time TIMESTAMP DEFAULT NOW(),
     PRIMARY KEY (token)
 );
+
+
+CREATE SCHEMA IF NOT EXISTS auth;
+
+CREATE TYPE auth.permissions AS ENUM ('admin', 'cron', 'developer');
+CREATE EXTENSION "uuid-ossp";
+
+CREATE TABLE IF NOT EXISTS auth.users(
+    username VARCHAR(50) UNIQUE NOT NULL,
+    user_id SERIAL PRIMARY KEY,
+    token uuid NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    date_joined timestamptz DEFAULT NOW(),
+    permission auth.permissions
+);
+

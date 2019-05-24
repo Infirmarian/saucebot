@@ -25,22 +25,22 @@ def database():
 def insert():
     token = request.args.get('t')
     res = tracked_item.load_token_query(token, insert=True)
-    if len(res) == 0:
-        return res[0]
+    if len(res) == 1:
+        return "<h1>{}</h1>".format(res[0])
     else:
         messenger.message_group(res[0], res[1])
-        return res[0]
+        return "<h1>{}</h1>".format(res[0])
 
 
 @app.route('/d')
 def delete():
     token = request.args.get('t')
     res = tracked_item.load_token_query(token, insert=False)
-    if len(res) == 0:
-        return res[0]
+    if len(res) == 1:
+        return "<h1>{}</h1>".format(res[0])
     else:
         messenger.message_group(res[0], res[1])
-        return res[0]
+        return "<h1>{}</h1>".format(res[0])
 
 
 @app.route('/groupme', methods=['POST'])
@@ -59,9 +59,45 @@ def google_home():
 
 
 @app.route('/internal/scrape/generate_new_menu_data')
-def scrape():
-    scrape.daily_scrape()
-    return ''
+def daily_scrape():
+    token = request.args.get('token')
+    permission = get_authorization(token)
+    if permission != 'admin' and permission != 'cron':
+        return 'NOT AUTHORIZED', 403
+    return scrape.daily_scrape()
+
+
+@app.route('/internal/db/clear_cache')
+def clear_cache():
+    token = request.args.get('token')
+    permission = get_authorization(token)
+    if permission != 'admin' and permission != 'cron':
+        return 'NOT AUTHORIZED', 403
+    return tracked_item.purge_old_cached_queries()
+
+
+@app.route('/internal/notify/today')
+def send_daily_messages():
+    token = request.args.get('token')
+    permission = get_authorization(token)
+    if permission != 'admin' and permission != 'cron':
+        return 'NOT AUTHORIZED', 403
+
+    results = response.generate_daily_messages()
+    for result in results:
+        messenger.message_group(result[1], result[0])
+    return 'Notified {} groups'.format(len(results))
+
+
+def get_authorization(token):
+    if token is None:
+        return None
+    with db.db_pool.connect() as conn:
+        cur = conn.execute("SELECT permission FROM auth.users WHERE token = %s;", token)
+        rs = cur.fetchall()
+        if len(rs) == 0:
+            return None
+        return rs[0][0]
 
 
 if __name__ == '__main__':

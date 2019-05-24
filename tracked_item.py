@@ -4,7 +4,7 @@ import database_interface as db
 import random
 
 get_food_id_query = '''SELECT food.food_id, name FROM food LEFT JOIN tracked_items t ON t.food_id = food.food_id WHERE {};'''
-add_food_id_query = '''INSERT INTO tracked_items VALUES (%s, %s) ON CONFLICT DO NOTHING ;'''
+add_food_id_query = '''INSERT INTO tracked_items VALUES (%s, %s) ON CONFLICT DO NOTHING;'''
 delete_food_id_query = '''DELETE FROM tracked_items WHERE group_id = %s AND food_id = %s;'''
 list_items_query = '''SELECT name FROM tracked_items JOIN food ON food.food_id = tracked_items.food_id WHERE group_id = %s;'''
 generate_saved_query = '''INSERT INTO temporary_queries (token, group_id, food_id) VALUES (%s, %s, %s); '''
@@ -13,17 +13,25 @@ select_saved_query = '''SELECT group_id, food.food_id, name
                         FROM temporary_queries 
                         JOIN food ON food.food_id = temporary_queries.food_id
                         WHERE token = %s AND time > NOW() - INTERVAL '10 minute';'''
+purge_query = '''DELETE FROM temporary_queries WHERE time < NOW() - INTERVAL '10 minute' RETURNING food_id;'''
+drop_token_query = '''DELETE FROM temporary_queries WHERE token = %s;'''
 
-URL='saucebot.appspot.com'
+URL='saucebot.net'
 chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWYXZ0123456789'
 
 
 def add_tracked_item(name, group_id):
-    query = get_food_id_query.format(' AND '.join('name ~* %s' for _ in name))
-    item_key = db.execute_query(query, values=name, results=True)
+    query = get_food_id_query.format('(group_id IS NULL OR group_id != %s) AND ' + ' AND '.join('name ~* %s' for _ in name))
+    item_key = db.execute_query(query, values=[group_id] + name, results=True)
 
     if len(item_key) == 0:
-        return "{} doesn't appear to be a valid food item".format(' '.join(name))
+        query = get_food_id_query.format(' AND '.join('name ~* %s' for _ in name))
+        item_key = db.execute_query(query, values=name, results=True)
+        if len(item_key) == 0:
+            return "{} doesn't appear to be a valid food item".format(' '.join(name))
+        else:
+            return "{} is already being tracked".format(' '.join(name))
+
     if len(item_key) > 1:
         return _generate_temporary_modify_urls(item_key, group_id, 'i')
 
@@ -36,7 +44,13 @@ def remove_tracked_item(name, group_id):
     item_key = db.execute_query(query, values=[group_id]+name, results=True)
 
     if len(item_key) == 0:
-        return "{} doesn't appear to be a valid food item".format(' '.join(name))
+        query = get_food_id_query.format(' AND '.join('name ~* %s' for _ in name))
+        item_key = db.execute_query(query, values=name, results=True)
+        if len(item_key) == 0:
+            return "{} doesn't appear to be a valid food item".format(' '.join(name))
+        else:
+            return "{} isn't being tracked".format(' '.join(name))
+
     if len(item_key) > 1:
         return _generate_temporary_modify_urls(item_key, group_id, 'd')
 
@@ -63,13 +77,15 @@ def _generate_random_string(count):
 def load_token_query(token, insert):
     result = db.execute_query(select_saved_query, values=token, results=True)
     if len(result) == 0:
-        return ['Unable to add the selected item']
+        return ['Unable to {} the selected item'.format('add' if insert else 'remove')]
     result = result[0]
     if insert:
         db.execute_query(add_food_id_query, values=(result[0], result[1]))
+        db.execute_query(drop_token_query, values=token)
         return ['Now tracking {}'.format(result[2]), result[0]]
     else:
         db.execute_query(delete_food_id_query, values=(result[0], result[1]))
+        db.execute_query(drop_token_query, values=token)
         return ['No longer tracking {}'.format(result[2]), result[0]]
 
 
@@ -78,7 +94,11 @@ def _generate_temporary_modify_urls(items, group_id, i_or_d):
     for item in items[:5]:
         token = _generate_random_string(8)
         db.execute_query(generate_saved_query, values=(token, group_id, item[0]))
-        response += '- {item} ({url}/{type}?t={token})\n'.format(item=item[1], url=URL, token=token, type=i_or_d)
+        response += '- {item}\n({url}/{type}?t={token})\n'.format(item=item[1], url=URL, token=token, type=i_or_d)
     return response
 
+
+def purge_old_cached_queries():
+    deleted = db.execute_query(purge_query, results=True)
+    return 'Deleted {} cached queries from the database'.format(len(deleted))
 
