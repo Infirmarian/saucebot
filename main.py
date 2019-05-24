@@ -17,7 +17,7 @@ def hello_world():
 
 @app.route('/db')
 def database():
-    rs = db.execute_query('SELECT * FROM food LIMIT 10;', results=True)
+    rs = db.execute_query('SELECT * FROM dining.food LIMIT 10;', results=True)
     return render_template('db_result.html', results=rs)
 
 

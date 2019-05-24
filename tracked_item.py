@@ -3,18 +3,18 @@
 import database_interface as db
 import random
 
-get_food_id_query = '''SELECT food.food_id, name FROM food LEFT JOIN tracked_items t ON t.food_id = food.food_id WHERE {};'''
-add_food_id_query = '''INSERT INTO tracked_items VALUES (%s, %s) ON CONFLICT DO NOTHING;'''
-delete_food_id_query = '''DELETE FROM tracked_items WHERE group_id = %s AND food_id = %s;'''
-list_items_query = '''SELECT name FROM tracked_items JOIN food ON food.food_id = tracked_items.food_id WHERE group_id = %s;'''
-generate_saved_query = '''INSERT INTO temporary_queries (token, group_id, food_id) VALUES (%s, %s, %s); '''
+get_food_id_query = '''SELECT f.food_id, name FROM dining.food f LEFT JOIN dining.tracked_items t ON t.food_id = f.food_id WHERE {};'''
+add_food_id_query = '''INSERT INTO dining.tracked_items VALUES (%s, %s) ON CONFLICT DO NOTHING;'''
+delete_food_id_query = '''DELETE FROM dining.tracked_items WHERE group_id = %s AND food_id = %s;'''
+list_items_query = '''SELECT name FROM dining.tracked_items JOIN dining.food ON food.food_id = tracked_items.food_id WHERE group_id = %s;'''
+generate_saved_query = '''INSERT INTO dining.temporary_queries (token, group_id, food_id) VALUES (%s, %s, %s); '''
 
 select_saved_query = '''SELECT group_id, food.food_id, name 
-                        FROM temporary_queries 
-                        JOIN food ON food.food_id = temporary_queries.food_id
+                        FROM dining.temporary_queries 
+                        JOIN dining.food ON food.food_id = temporary_queries.food_id
                         WHERE token = %s AND time > NOW() - INTERVAL '10 minute';'''
-purge_query = '''DELETE FROM temporary_queries WHERE time < NOW() - INTERVAL '10 minute' RETURNING food_id;'''
-drop_token_query = '''DELETE FROM temporary_queries WHERE token = %s;'''
+purge_query = '''DELETE FROM dining.temporary_queries WHERE time < NOW() - INTERVAL '10 minute' RETURNING food_id;'''
+drop_token_query = '''DELETE FROM dining.temporary_queries WHERE token = %s;'''
 
 URL='saucebot.net'
 chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWYXZ0123456789'

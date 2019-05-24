@@ -13,16 +13,16 @@ dining_list = {
 }
 
 insert_menu_query = '''
-INSERT INTO food (name) VALUES {}
+INSERT INTO dining.food (name) VALUES {}
 ON CONFLICT DO NOTHING;
 '''
 
 insert_today = '''
-INSERT INTO menu (dining_hall, meal, food_id) VALUES {}  ON CONFLICT DO NOTHING;
+INSERT INTO dining.menu (dining_hall, meal, food_id) VALUES {}  ON CONFLICT DO NOTHING;
 '''
 
 insert_hours = '''
-INSERT INTO hours (hall, meal, hour) VALUES {} ON CONFLICT DO NOTHING;
+INSERT INTO dining.hours (hall, meal, hour) VALUES {} ON CONFLICT DO NOTHING;
 '''
 
 last_scrape = 0
@@ -90,7 +90,7 @@ def scrape_and_store_menu():
     db.execute_query(final_all_item_query, values=list(food_list), results=False)
 
     # Add the daily menu into the database
-    item_query = "('{hall}', '{meal}', (SELECT food_id FROM food WHERE name = %s LIMIT 1))"
+    item_query = "('{hall}', '{meal}', (SELECT food_id FROM dining.food WHERE name = %s LIMIT 1))"
     item_list = []
     query_list = []
     for hall, menu in menus.items():

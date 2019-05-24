@@ -29,7 +29,7 @@ def generate_user_response(text, group_id):
 
 
 def get_hours(hall):
-    hours_query = "SELECT meal, hour FROM hours WHERE hall = %s AND day = (NOW() AT TIME ZONE 'US/Pacific')::date;"
+    hours_query = "SELECT meal, hour FROM dining.hours WHERE hall = %s AND day = (NOW() AT TIME ZONE 'US/Pacific')::date;"
     hours = db.execute_query(hours_query, values=hall, results=True)
     if len(hours) == 0:
         return '{} is closed today'.format(hall)
@@ -40,9 +40,9 @@ def get_hours(hall):
 
 def get_items_today(group_id):
     query = """ SELECT m.dining_hall, f.name, m.meal
-                FROM menu m
-                LEFT JOIN food f ON f.food_id = m.food_id
-                LEFT JOIN tracked_items t ON t.food_id = m.food_id
+                FROM dining.menu m
+                LEFT JOIN dining.food f ON f.food_id = m.food_id
+                LEFT JOIN dining.tracked_items t ON t.food_id = m.food_id
                 WHERE t.group_id = %s
                 AND m.day = (NOW() AT TIME ZONE 'US/Pacific')::date;"""
     results = db.execute_query(query, values=group_id, results=True)
@@ -89,7 +89,7 @@ def get_info_description():
 
 
 def generate_daily_messages():
-    query = '''SELECT group_id FROM groups WHERE notify = TRUE'''
+    query = '''SELECT group_id FROM dining.groups WHERE notify = TRUE'''
     groups = db.execute_query(query, results=True)
     results = []
     for group in groups:
