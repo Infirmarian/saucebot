@@ -9,6 +9,7 @@ def generate_google_home_response(data):
     try:
         intention = data['queryResult']['intent']['displayName']
         parameters = data['queryResult']['parameters']
+        user = data['originalDetectIntentRequest']['payload']['user']['userId']
     except KeyError:
         print("Bad json provided by /google endpoint: {}".format(data), file=sys.stderr)
         return {'fulfillmentText': "I didn't quite understand that question"}
@@ -20,7 +21,16 @@ def generate_google_home_response(data):
             return {'fulfillmentText': get_hours(hall)}
         else:
             return {'fulfillmentText': get_specific_hours(hall, hours)}
-
+    # All the below intentions create a user id if it hasn't been seen before
+    if intention == 'list':
+        return {'fulfillmentText': tracked.list_tracked_items(user, insert_on_dne=True)}
+    if intention == 'add':
+        item = parameters['food']
+        return {'fulfillmentText': tracked.add_google_tracked_item(item, user)}
+    if intention == 'remove':
+        pass #TODO
+    if intention == 'today':
+        pass
     return {'fulfillmentText': "I don't understand that question"}
 
 
