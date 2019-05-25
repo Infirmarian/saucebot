@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS dining.food(
 CREATE TABLE IF NOT EXISTS dining.groups(
     group_id VARCHAR(20),
     bot_id VARCHAR(30),
-    notify BOOLEAN,
+    notify BOOLEAN DEFAULT TRUE,
     PRIMARY KEY (group_id)
 );
 

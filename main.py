@@ -1,11 +1,12 @@
 # Copyright Robert Geil 2019
 
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, send_file
 import database_interface as db
 import messenger
 import response
 import tracked_item
 import scrape
+import json
 
 app = Flask(__name__)
 
@@ -13,6 +14,10 @@ app = Flask(__name__)
 @app.route('/')
 def hello_world():
     return 'Hello World!'
+
+@app.route('/privacy')
+def privacy_policy():
+    return send_file('static/privacy.pdf', mimetype='application/pdf')
 
 
 @app.route('/db')
@@ -55,8 +60,14 @@ def group_me():
 
 @app.route('/google', methods=['POST'])
 def google_home():
-    return 'request received'
-
+    print(request.json)
+    r = response.generate_google_home_response(request.json)
+    resp = app.response_class(
+        response = json.dumps(r),
+        status=200,
+        mimetype='application/json'
+    )
+    return resp
 
 @app.route('/internal/scrape/generate_new_menu_data')
 def daily_scrape():

@@ -3,10 +3,29 @@
 import parse
 import database_interface as db
 import tracked_item as tracked
-import time
+import sys
+
+def generate_google_home_response(data):
+    try:
+        intention = data['queryResult']['intent']['displayName']
+        parameters = data['queryResult']['parameters']
+    except KeyError:
+        print("Bad json provided by /google endpoint: {}".format(data), file=sys.stderr)
+        return {'fulfillmentText': "I didn't quite understand that question"}
+
+    if intention == 'hours':
+        hall = parameters['dininghall']
+        hours = parameters['times']
+        if hours == '':
+            return {'fulfillmentText': get_hours(hall)}
+        else:
+            return {'fulfillmentText': get_specific_hours(hall, hours)}
+
+    return {'fulfillmentText': "I don't understand that question"}
+
 
 def generate_user_response(text, group_id):
-    intention = parse.parse_intent(text)
+    intention = parse.parse_groupme_intent(text)
     todo = intention['tag']
     if todo is None:
         return
@@ -28,13 +47,20 @@ def generate_user_response(text, group_id):
     return "I don't know that command!"
 
 
+def get_specific_hours(hall, meal):
+    hours_query = "SELECT hour FROM dining.hours WHERE hall = %s AND meal = %s AND day = (NOW() AT TIME ZONE 'US/Pacific')::date;"
+    hours = db.execute_query(hours_query, values=(hall,meal,), results=True)
+    if len(hours) == 0:
+        return "{} isn't open for {} today".format(hall, meal)
+    return "{} is open for {} from {}".format(hall, meal, hours[0][0])
+
 def get_hours(hall):
     hours_query = "SELECT meal, hour FROM dining.hours WHERE hall = %s AND day = (NOW() AT TIME ZONE 'US/Pacific')::date;"
     hours = db.execute_query(hours_query, values=hall, results=True)
     if len(hours) == 0:
         return '{} is closed today'.format(hall)
     response = 'The hours in {hall} today are\n{results}'.format(hall=hall,
-                                                                 results='\n'.join(i[0]+": "+i[1] for i in hours))
+                                                                 results=',\n'.join(i[0]+": "+i[1] for i in hours))
     return response
 
 

@@ -25,7 +25,7 @@ info_regex = re.compile(r'[Aa]bout|[Ii]nfo')
 stop_daily_regex = re.compile(r'[Ss]top( daily)? (updated|messages?)')
 
 
-def parse_intent(raw):
+def parse_groupme_intent(raw):
     matches = saucebot_regex.findall(raw)
     if len(matches) == 0:
         return {'tag': None}
