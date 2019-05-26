@@ -15,12 +15,16 @@ def generate_google_home_response(data):
         return {'fulfillmentText': "I didn't quite understand that question"}
 
     if intention == 'hours':
-        hall = parameters['dininghall']
+        hall = parameters['dining_hall']
         hours = parameters['times']
         if hours == '':
             return {'fulfillmentText': get_hours(hall)}
         else:
             return {'fulfillmentText': get_specific_hours(hall, hours)}
+    if intention == 'search':
+        hall = None if parameters['dining_hall'] == '' else parameters['dining_hall']
+        item = parameters['food']
+        return {'fulfillmentText': get_queried_food_item(item, hall)}
     # All the below intentions create a user id if it hasn't been seen before
     if intention == 'list':
         return {'fulfillmentText': tracked.list_tracked_items(user, insert_on_dne=True)}
@@ -31,8 +35,8 @@ def generate_google_home_response(data):
         item = parameters['food']
         return {'fulfillmentText': tracked.remove_google_tracked_item(item, user)}
     if intention == 'today':
-        hall = parameters['hall']
-        meal = parameters['times']
+        hall = parameters.get('dining_hall')
+        meal = parameters.get('times')
         if hall == '':
             hall = None
         if meal == '':
@@ -41,7 +45,7 @@ def generate_google_home_response(data):
     return {'fulfillmentText': "I don't understand that question"}
 
 
-def generate_user_response(text, group_id):
+def generate_groupme_response(text, group_id):
     intention = parse.parse_groupme_intent(text)
     todo = intention['tag']
     if todo is None:
@@ -62,6 +66,37 @@ def generate_user_response(text, group_id):
         return intention.get('value')
 
     return "I don't know that command!"
+
+
+def get_queried_food_item(item, hall):
+    query = ''' SELECT dining_hall, meal, name
+                FROM dining.menu 
+                JOIN dining.food f ON f.food_id = menu.food_id
+                WHERE day = (NOW() AT TIME ZONE 'US/Pacific')::date
+                AND name = %s {};'''.format('' if hall is None else 'AND dining_hall = %s ')
+    params = (item,) if hall is None else (item, hall,)
+
+    with db.db_pool.connect() as conn:
+        rs = conn.execute(query, params).fetchall()
+
+    if len(rs) == 0:
+        return "{} isn't being served in {} today".format(item, 'any dining hall' if hall is None else hall)
+    results = {}
+    for row in rs:
+        if row[0] in results:
+            results[row[0]].append(row[1])
+        else:
+            results[row[0]] = [row[1]]
+
+    if hall is not None:
+        return "{} is in {} at {}".format(item, hall, _format_list(results[hall]))
+
+    allhalls = []
+    for result in results:
+        allhalls.append("{} at {}".format(result, _format_list(results[result])))
+    return "{} is in {}".format(item, _format_list(allhalls))
+
+
 
 
 def get_specific_hours(hall, meal):
@@ -110,11 +145,12 @@ def _format_time_specific(items_dict, hall, time):
     # Only a hall has been specified
     if time is None:
         if hall in items_dict:
+            allitems = []
             for item in items_dict[hall]:
-                msg += "{item} is in {hall} at {times}.\n".format(item=item, hall=hall, times=_format_text(items_dict[hall][item]))
+                allitems.append("{} at {}".format(item, _format_list(items_dict[hall][item])))
+            return "In {} today, there is {}".format(hall, _format_list(allitems))
         else:
-            msg = "No tracked items are in {}".format(hall)
-        return msg
+            return "No tracked items are in {}".format(hall)
     # Only a time has been specified
     if hall is None:
         locations = []
@@ -134,10 +170,8 @@ def _format_time_specific(items_dict, hall, time):
             if time in items_dict[hall][item]:
                 items.append(item)
         if len(items) != 0:
-            return "In {} at {}, there is {}".format(hall, time,
-                                                     items[0] if len(items) == 1 else
-                                                     ', '.join(items[:-1])+ " AND "+items[-1])
-    return "None of your tracked items are in {} at {}".format(hall, time)
+            return "In {} at {}, there is {}".format(hall, time, _format_list(items))
+        return "None of your tracked items are in {} at {}".format(hall, time)
 
 
 
@@ -145,7 +179,7 @@ def _format_text(items_dict):
     msg = ""
     for hall in items_dict:
         for item in (items_dict[hall]):
-            msg += item + " is in " + hall + " at " + _format_times(items_dict[hall][item]) + "\n"
+            msg += item + " is in " + hall + " at " + _format_list(items_dict[hall][item]) + "\n"
 
     if len(msg) > 0:
         msg = "Today in the dining halls:\n" + msg
@@ -154,13 +188,14 @@ def _format_text(items_dict):
     return msg
 
 
-def _format_times(times):
-    if len(times) == 1:
-        return times[0]
-    if len(times) == 2:
-        return times[0] + " and " + times[1]
-    if len(times) == 3:
-        return times[0] + ", " + times[1] + " and " + times[2]
+def _format_list(items):
+    if len(items) == 0:
+        return ''
+    if len(items) == 1:
+        return items[0]
+    if len(items) == 2:
+        return items[0] + " and " + items[1]
+    return ', '.join(items[:-1]) + " and " + items[-1]
 
 
 def get_info_description():

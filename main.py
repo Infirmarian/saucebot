@@ -51,7 +51,7 @@ def delete():
 @app.route('/groupme', methods=['POST'])
 def group_me():
     if request.json['sender_type'] != 'bot':
-        message = response.generate_user_response(request.json['text'], group_id=str(request.json['group_id']))
+        message = response.generate_groupme_response(request.json['text'], group_id=str(request.json['group_id']))
         if message is None:
             return ''
         messenger.message_group(message, str(request.json['group_id']))
