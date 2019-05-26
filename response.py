@@ -28,9 +28,16 @@ def generate_google_home_response(data):
         item = parameters['food']
         return {'fulfillmentText': tracked.add_google_tracked_item(item, user)}
     if intention == 'remove':
-        pass #TODO
+        item = parameters['food']
+        return {'fulfillmentText': tracked.remove_google_tracked_item(item, user)}
     if intention == 'today':
-        pass
+        hall = parameters['hall']
+        meal = parameters['times']
+        if hall == '':
+            hall = None
+        if meal == '':
+            meal = None
+        return {'fulfillmentText': get_items_today(user, hall=hall, time=meal)}
     return {'fulfillmentText': "I don't understand that question"}
 
 
@@ -64,6 +71,7 @@ def get_specific_hours(hall, meal):
         return "{} isn't open for {} today".format(hall, meal)
     return "{} is open for {} from {}".format(hall, meal, hours[0][0])
 
+
 def get_hours(hall):
     hours_query = "SELECT meal, hour FROM dining.hours WHERE hall = %s AND day = (NOW() AT TIME ZONE 'US/Pacific')::date;"
     hours = db.execute_query(hours_query, values=hall, results=True)
@@ -74,7 +82,7 @@ def get_hours(hall):
     return response
 
 
-def get_items_today(group_id):
+def get_items_today(group_id, hall=None, time=None):
     query = """ SELECT m.dining_hall, f.name, m.meal
                 FROM dining.menu m
                 LEFT JOIN dining.food f ON f.food_id = m.food_id
@@ -91,8 +99,46 @@ def get_items_today(group_id):
                 m_data[row[0]][row[1]] = [row[2]]
         else:
             m_data[row[0]] = {row[1]:[row[2]]}
+    return _format_time_specific(m_data, hall, time)
 
-    return _format_text(m_data)
+
+def _format_time_specific(items_dict, hall, time):
+    msg = ""
+    # Nothing has been specified
+    if hall is None and time is None:
+        return _format_text(items_dict)
+    # Only a hall has been specified
+    if time is None:
+        if hall in items_dict:
+            for item in items_dict[hall]:
+                msg += "{item} is in {hall} at {times}.\n".format(item=item, hall=hall, times=_format_text(items_dict[hall][item]))
+        else:
+            msg = "No tracked items are in {}".format(hall)
+        return msg
+    # Only a time has been specified
+    if hall is None:
+        locations = []
+        for hall in items_dict:
+            for item in items_dict[hall]:
+                if time in items_dict[hall][item]:
+                    locations.append([item, hall])
+        if len(locations) == 0:
+            return "None of your items are being served at {}".format(time)
+        return "At {}, there is {}".format(time, ",".join("{} in {}".format(i[0], i[1]) for i in locations))
+
+    # Both a time and hall have been specified
+    if hall in items_dict:
+        msg = ""
+        items = []
+        for item in items_dict[hall]:
+            if time in items_dict[hall][item]:
+                items.append(item)
+        if len(items) != 0:
+            return "In {} at {}, there is {}".format(hall, time,
+                                                     items[0] if len(items) == 1 else
+                                                     ', '.join(items[:-1])+ " AND "+items[-1])
+    return "None of your tracked items are in {} at {}".format(hall, time)
+
 
 
 def _format_text(items_dict):

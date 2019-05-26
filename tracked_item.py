@@ -50,6 +50,19 @@ def add_google_tracked_item(name, group_id):
         conn.execute("INSERT INTO dining.tracked_items (group_id, food_id) VALUES (%s, %s);", (group_id, id_value[0][0]))
         return "I'm now tracking {}".format(name)
 
+
+def remove_google_tracked_item(name, group_id):
+    with db.db_pool.connect() as conn:
+        conn.execute(insert_group_id_query, group_id)
+        id_value = conn.execute('''SELECT f.food_id FROM dining.food f 
+                                JOIN dining.tracked_items t ON t.food_id = f.food_id 
+                                WHERE name = %s AND t.group_id = %s;''', (name, group_id,)).fetchall()
+        if len(id_value) == 0:
+            return "{} isn't being tracked".format(name)
+        conn.execute("DELETE FROM dining.tracked_items WHERE food_id = %s AND group_id = %s;", (id_value[0][0], group_id,))
+        return "No longer tracking {}".format(name)
+
+
 def remove_tracked_item(name, group_id):
     query = get_food_id_query.format('group_id = %s AND ' + ' AND '.join('name ~* %s' for _ in name))
     item_key = db.execute_query(query, values=[group_id]+name, results=True)
