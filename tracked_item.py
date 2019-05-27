@@ -3,18 +3,20 @@
 import database_interface as db
 import random
 
-get_food_id_query = '''SELECT food.food_id, name FROM food LEFT JOIN tracked_items t ON t.food_id = food.food_id WHERE {};'''
-add_food_id_query = '''INSERT INTO tracked_items VALUES (%s, %s) ON CONFLICT DO NOTHING;'''
-delete_food_id_query = '''DELETE FROM tracked_items WHERE group_id = %s AND food_id = %s;'''
-list_items_query = '''SELECT name FROM tracked_items JOIN food ON food.food_id = tracked_items.food_id WHERE group_id = %s;'''
-generate_saved_query = '''INSERT INTO temporary_queries (token, group_id, food_id) VALUES (%s, %s, %s); '''
+insert_group_id_query = '''INSERT INTO dining.groups (group_id) VALUES (%s) ON CONFLICT DO NOTHING;'''
+get_food_id_query = '''SELECT f.food_id, name FROM dining.food f LEFT JOIN dining.tracked_items t ON t.food_id = f.food_id WHERE {};'''
+add_food_id_query = '''INSERT INTO dining.tracked_items VALUES (%s, %s) ON CONFLICT DO NOTHING;'''
+google_add_food_id_query = '''INSERT INTO dining.tracked_items (group_id, food_id) VALUES (%s, (SELECT food_id FROM food WHERE name = %s LIMIT 1));'''
+delete_food_id_query = '''DELETE FROM dining.tracked_items WHERE group_id = %s AND food_id = %s;'''
+list_items_query = '''SELECT name FROM dining.tracked_items JOIN dining.food ON food.food_id = tracked_items.food_id WHERE group_id = %s;'''
+generate_saved_query = '''INSERT INTO dining.temporary_queries (token, group_id, food_id) VALUES (%s, %s, %s); '''
 
 select_saved_query = '''SELECT group_id, food.food_id, name 
-                        FROM temporary_queries 
-                        JOIN food ON food.food_id = temporary_queries.food_id
+                        FROM dining.temporary_queries 
+                        JOIN dining.food ON food.food_id = temporary_queries.food_id
                         WHERE token = %s AND time > NOW() - INTERVAL '10 minute';'''
-purge_query = '''DELETE FROM temporary_queries WHERE time < NOW() - INTERVAL '10 minute' RETURNING food_id;'''
-drop_token_query = '''DELETE FROM temporary_queries WHERE token = %s;'''
+purge_query = '''DELETE FROM dining.temporary_queries WHERE time < NOW() - INTERVAL '10 minute' RETURNING food_id;'''
+drop_token_query = '''DELETE FROM dining.temporary_queries WHERE token = %s;'''
 
 URL='saucebot.net'
 chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWYXZ0123456789'
@@ -23,7 +25,6 @@ chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWYXZ0123456789'
 def add_tracked_item(name, group_id):
     query = get_food_id_query.format('(group_id IS NULL OR group_id != %s) AND ' + ' AND '.join('name ~* %s' for _ in name))
     item_key = db.execute_query(query, values=[group_id] + name, results=True)
-
     if len(item_key) == 0:
         query = get_food_id_query.format(' AND '.join('name ~* %s' for _ in name))
         item_key = db.execute_query(query, values=name, results=True)
@@ -37,6 +38,29 @@ def add_tracked_item(name, group_id):
 
     db.execute_query(add_food_id_query, values=(group_id, item_key[0][0]))
     return "Now tracking {}".format(item_key[0][1])
+
+
+def add_google_tracked_item(name, group_id):
+    with db.db_pool.connect() as conn:
+        conn.execute(insert_group_id_query, group_id)
+        id_value = conn.execute("SELECT food_id FROM dining.food WHERE name = %s", name).fetchall()
+        if len(id_value) == 0:
+            print("ERROR: food item {} provided by google didn't match in the database!".format(name))
+            return "Something went wrong and I couldn't find that exact item"
+        conn.execute("INSERT INTO dining.tracked_items (group_id, food_id) VALUES (%s, %s);", (group_id, id_value[0][0]))
+        return "I'm now tracking {}".format(name)
+
+
+def remove_google_tracked_item(name, group_id):
+    with db.db_pool.connect() as conn:
+        conn.execute(insert_group_id_query, group_id)
+        id_value = conn.execute('''SELECT f.food_id FROM dining.food f 
+                                JOIN dining.tracked_items t ON t.food_id = f.food_id 
+                                WHERE name = %s AND t.group_id = %s;''', (name, group_id,)).fetchall()
+        if len(id_value) == 0:
+            return "{} isn't being tracked".format(name)
+        conn.execute("DELETE FROM dining.tracked_items WHERE food_id = %s AND group_id = %s;", (id_value[0][0], group_id,))
+        return "No longer tracking {}".format(name)
 
 
 def remove_tracked_item(name, group_id):
@@ -58,13 +82,16 @@ def remove_tracked_item(name, group_id):
     return "No longer tracking {}".format(item_key[0][1])
 
 
-def list_tracked_items(group_id):
-    result_list = db.execute_query(list_items_query, values=group_id, results=True)
-    if len(result_list) == 0:
-        response = "No items are being tracked"
-    else:
-        response = "I'm tracking \n{}".format("\n".join(i[0] for i in result_list))
-    return response
+def list_tracked_items(group_id, insert_on_dne=False):
+    with db.db_pool.connect() as conn:
+        if insert_on_dne:
+            conn.execute(insert_group_id_query, group_id)
+        result_list = conn.execute(list_items_query, group_id).fetchall()
+        if len(result_list) == 0:
+            response = "No items are being tracked"
+        else:
+            response = "I'm tracking \n{}".format(",\n".join(i[0] for i in result_list))
+        return response
 
 
 def _generate_random_string(count):

@@ -14,9 +14,14 @@ def message_group(msg, group_id):
         messages.append(msg[i:i + 990])
         i += 990
     # Identify the id to send the query to
-    bot_id = db.execute_query('SELECT bot_id FROM groups WHERE group_id = %s', values=group_id, results=True)
+    bot_id = db.execute_query('SELECT bot_id FROM dining.groups WHERE group_id = %s', values=group_id, results=True)
     if len(bot_id) > 0:
         bot_id = bot_id[0][0]
+
+    if len(messages) == 1:
+        sleep_time = 0
+    else:
+        sleep_time = 0.5
 
     for message in messages:
         data = {
@@ -28,6 +33,6 @@ def message_group(msg, group_id):
             print("Bot successfully posted message!")
         else:
             print("Error, message wasn't sent")
-        time.sleep(0.5)
+        time.sleep(sleep_time)
 
 

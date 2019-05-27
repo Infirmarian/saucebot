@@ -1,11 +1,12 @@
 # Copyright Robert Geil 2019
 
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, send_file
 import database_interface as db
 import messenger
 import response
 import tracked_item
 import scrape
+import json
 
 app = Flask(__name__)
 
@@ -14,10 +15,14 @@ app = Flask(__name__)
 def hello_world():
     return 'Hello World!'
 
+@app.route('/privacy')
+def privacy_policy():
+    return send_file('static/privacy.pdf', mimetype='application/pdf')
+
 
 @app.route('/db')
 def database():
-    rs = db.execute_query('SELECT * FROM food LIMIT 10;', results=True)
+    rs = db.execute_query('SELECT * FROM dining.food LIMIT 10;', results=True)
     return render_template('db_result.html', results=rs)
 
 
@@ -46,7 +51,7 @@ def delete():
 @app.route('/groupme', methods=['POST'])
 def group_me():
     if request.json['sender_type'] != 'bot':
-        message = response.generate_user_response(request.json['text'], group_id=str(request.json['group_id']))
+        message = response.generate_groupme_response(request.json['text'], group_id=str(request.json['group_id']))
         if message is None:
             return ''
         messenger.message_group(message, str(request.json['group_id']))
@@ -55,8 +60,14 @@ def group_me():
 
 @app.route('/google', methods=['POST'])
 def google_home():
-    return 'request received'
-
+    print(request.json)
+    r = response.generate_google_home_response(request.json)
+    resp = app.response_class(
+        response = json.dumps(r),
+        status=200,
+        mimetype='application/json'
+    )
+    return resp
 
 @app.route('/internal/scrape/generate_new_menu_data')
 def daily_scrape():
