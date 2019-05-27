@@ -3,14 +3,13 @@ CREATE SCHEMA IF NOT EXISTS dining;
 CREATE TYPE dining.hall AS ENUM ('Covel', 'Bruin Plate', 'De Neve', 'FEAST', 'Bruin Café', 'Café 1919', 'Rendezvous', 'The Study at Hedrick');
 CREATE TYPE dining.mealtime AS ENUM('Breakfast', 'Brunch', 'Lunch', 'Dinner', 'Late Night');
 
-
 CREATE TABLE IF NOT EXISTS dining.food(
     food_id SERIAL UNIQUE,
     name VARCHAR(120) PRIMARY KEY
 );
 
 CREATE TABLE IF NOT EXISTS dining.groups(
-    group_id VARCHAR(20),
+    group_id VARCHAR(256),
     bot_id VARCHAR(30),
     notify BOOLEAN DEFAULT TRUE,
     PRIMARY KEY (group_id)
@@ -26,7 +25,7 @@ CREATE TABLE IF NOT EXISTS dining.menu(
 );
 
 CREATE TABLE IF NOT EXISTS dining.tracked_items(
-    group_id VARCHAR(20),
+    group_id VARCHAR(256),
     food_id INT,
     PRIMARY KEY (group_id, food_id),
     FOREIGN KEY (food_id) REFERENCES dining.food(food_id),
@@ -43,7 +42,7 @@ CREATE TABLE IF NOT EXISTS dining.hours(
 
 CREATE TABLE IF NOT EXISTS dining.temporary_queries(
     token VARCHAR(10),
-    group_id VARCHAR(20),
+    group_id VARCHAR(256),
     food_id INTEGER,
     time TIMESTAMP DEFAULT NOW(),
     PRIMARY KEY (token)

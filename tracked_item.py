@@ -47,7 +47,7 @@ def add_google_tracked_item(name, group_id):
         if len(id_value) == 0:
             print("ERROR: food item {} provided by google didn't match in the database!".format(name))
             return "Something went wrong and I couldn't find that exact item"
-        conn.execute("INSERT INTO dining.tracked_items (group_id, food_id) VALUES (%s, %s);", (group_id, id_value[0][0]))
+        conn.execute("INSERT INTO dining.tracked_items (group_id, food_id) VALUES (%s, %s) ON CONFLICT DO NOTHING;", (group_id, id_value[0][0]))
         return "I'm now tracking {}".format(name)
 
 

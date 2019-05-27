@@ -7,25 +7,40 @@ import sys
 
 def generate_alexa_response(data):
     print(data)
+    if data['request']['type'] == 'SessionEndedRequest':
+        return {}
     intention = data['request']['intent']['name']
     user = data['session']['user']['userId']
-    slots = data['request']['intent']['slots']
-    dining_hall = None if 'dining_hall' not in slots else slots['dining_hall']['resolutions']['resolutionsPerAuthority']['values'][0]['value']['name']
-    speech_text = do_generate_responses(intention, dining_hall=dining_hall, meal_time=None, food_item=None, user=user)
+    if 'slots' in data['request']['intent']:
+        slots = data['request']['intent']['slots']
+        dining_hall = _get_attribute_from_alexa('dining_hall', slots)
+        food = _get_attribute_from_alexa('food', slots)
+        meal_time = _get_attribute_from_alexa('meal_time', slots)
+    else:
+        dining_hall = None
+        food = None
+        meal_time=None
 
+    speech_text = do_generate_responses(intention, dining_hall=dining_hall, meal_time=meal_time, food_item=food, user=user)
+    speech_text = speech_text.replace("I'm", "Saucebot is")
+    speech_text = speech_text.replace("I ", "Saucebot ")
     response = {
-        "body": {
-            "version": "1.0",
-            "response":{
-                "outputSpeech":{
-                    "type": "PlainText",
-                    "text": speech_text
-                }
+        "version": "1.0",
+        "response":{
+            "outputSpeech":{
+                "type": "PlainText",
+                "text": speech_text
             }
         }
     }
     return response
 
+
+def _get_attribute_from_alexa(name, slots):
+    if name not in slots or 'resolutions' not in slots[name]:
+        return None
+    else:
+        return slots[name]['resolutions']['resolutionsPerAuthority'][0]['values'][0]['value']['name']
 
 def generate_google_home_response(data):
     try:
