@@ -60,8 +60,18 @@ def group_me():
 
 @app.route('/google', methods=['POST'])
 def google_home():
-    print(request.json)
     r = response.generate_google_home_response(request.json)
+    resp = app.response_class(
+        response = json.dumps(r),
+        status=200,
+        mimetype='application/json'
+    )
+    return resp
+
+
+@app.route('/alexa', methods=['POST'])
+def alexa():
+    r = response.generate_alexa_response(request.json)
     resp = app.response_class(
         response = json.dumps(r),
         status=200,

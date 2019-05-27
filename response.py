@@ -5,44 +5,57 @@ import database_interface as db
 import tracked_item as tracked
 import sys
 
+def generate_alexa_response(data):
+    print(data)
+    intention = data['request']['intent']['name']
+    user = data['session']['user']['userId']
+    slots = data['request']['intent']['slots']
+    dining_hall = None if 'dining_hall' not in slots else slots['dining_hall']['resolutions']['resolutionsPerAuthority']['values'][0]['value']['name']
+    speech_text = do_generate_responses(intention, dining_hall=dining_hall, meal_time=None, food_item=None, user=user)
+
+    response = {
+        "body": {
+            "version": "1.0",
+            "response":{
+                "outputSpeech":{
+                    "type": "PlainText",
+                    "text": speech_text
+                }
+            }
+        }
+    }
+    return response
+
+
 def generate_google_home_response(data):
     try:
         intention = data['queryResult']['intent']['displayName']
         parameters = data['queryResult']['parameters']
         user = data['originalDetectIntentRequest']['payload']['user']['userId']
+        dining_hall = parameters.get('dining_hall') if parameters.get('dining_hall') != '' else None
+        meal_time = parameters.get('times') if parameters.get('times') != '' else None
+        food_item = parameters.get('food') if parameters.get('food') != '' else None
     except KeyError:
         print("Bad json provided by /google endpoint: {}".format(data), file=sys.stderr)
         return {'fulfillmentText': "I didn't quite understand that question"}
 
+    return {'fulfillmentText': do_generate_responses(intention, dining_hall=dining_hall, meal_time=meal_time, food_item=food_item, user=user)}
+
+
+def do_generate_responses(intention, dining_hall=None, meal_time=None, food_item=None, user=None):
     if intention == 'hours':
-        hall = parameters['dining_hall']
-        hours = parameters['times']
-        if hours == '':
-            return {'fulfillmentText': get_hours(hall)}
-        else:
-            return {'fulfillmentText': get_specific_hours(hall, hours)}
+        return get_specific_hours(dining_hall, meal=meal_time)
     if intention == 'search':
-        hall = None if parameters['dining_hall'] == '' else parameters['dining_hall']
-        item = parameters['food']
-        return {'fulfillmentText': get_queried_food_item(item, hall)}
-    # All the below intentions create a user id if it hasn't been seen before
+        return get_queried_food_item(food_item, dining_hall)
     if intention == 'list':
-        return {'fulfillmentText': tracked.list_tracked_items(user, insert_on_dne=True)}
+        return tracked.list_tracked_items(user, insert_on_dne=True)
     if intention == 'add':
-        item = parameters['food']
-        return {'fulfillmentText': tracked.add_google_tracked_item(item, user)}
+        return tracked.add_google_tracked_item(food_item, user)
     if intention == 'remove':
-        item = parameters['food']
-        return {'fulfillmentText': tracked.remove_google_tracked_item(item, user)}
+        return tracked.remove_google_tracked_item(food_item, user)
     if intention == 'today':
-        hall = parameters.get('dining_hall')
-        meal = parameters.get('times')
-        if hall == '':
-            hall = None
-        if meal == '':
-            meal = None
-        return {'fulfillmentText': get_items_today(user, hall=hall, time=meal)}
-    return {'fulfillmentText': "I don't understand that question"}
+        return get_items_today(user, hall=dining_hall, time=meal_time)
+    return "I don't understand that question"
 
 
 def generate_groupme_response(text, group_id):
@@ -99,7 +112,9 @@ def get_queried_food_item(item, hall):
 
 
 
-def get_specific_hours(hall, meal):
+def get_specific_hours(hall, meal=None):
+    if meal is None:
+        return get_hours(hall)
     hours_query = "SELECT hour FROM dining.hours WHERE hall = %s AND meal = %s AND day = (NOW() AT TIME ZONE 'US/Pacific')::date;"
     hours = db.execute_query(hours_query, values=(hall,meal,), results=True)
     if len(hours) == 0:
